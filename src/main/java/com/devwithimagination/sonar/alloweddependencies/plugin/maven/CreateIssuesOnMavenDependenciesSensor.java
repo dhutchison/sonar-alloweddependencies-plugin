@@ -1,4 +1,4 @@
-package com.devwithimagination.sonar.alloweddependencies.plugin.rules;
+package com.devwithimagination.sonar.alloweddependencies.plugin.maven;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -6,7 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import com.devwithimagination.sonar.alloweddependencies.maven.AllowedMavenDependenciesCheck;
+import com.devwithimagination.sonar.alloweddependencies.plugin.rules.DependencyRulesDefinition;
 import com.devwithimagination.sonar.alloweddependencies.settings.AllowedDependenciesProperties;
 
 import org.sonar.api.batch.fs.FileSystem;
@@ -50,8 +50,8 @@ public class CreateIssuesOnMavenDependenciesSensor implements Sensor {
          * Optimisation to disable execution of sensor if a project does not contain
          * Java files or if the rule is not activated in the Quality profile
          */
-        descriptor.onlyOnLanguage(MavenDependencyRulesDefinition.DEPENDENCY_LANGUAGE);
-        descriptor.createIssuesForRuleRepositories(MavenDependencyRulesDefinition.REPOSITORY);
+        descriptor.onlyOnLanguage(DependencyRulesDefinition.MAVEN_DEPENDENCY_LANGUAGE);
+        descriptor.createIssuesForRuleRepositories(DependencyRulesDefinition.REPOSITORY_MAVEN);
     }
 
     @Override
@@ -59,7 +59,7 @@ public class CreateIssuesOnMavenDependenciesSensor implements Sensor {
 
         /* Load our configuration for allowed dependencies */
         final List<String> allowedDependencies = getAllowedDependencies();
-        LOG.info("Allowed dependecies: '{}'", allowedDependencies);
+        LOG.info("Allowed dependencies: '{}'", allowedDependencies);
 
         /* Create our rule checker */
         final AllowedMavenDependenciesCheck check = new AllowedMavenDependenciesCheck(allowedDependencies);
@@ -96,7 +96,7 @@ public class CreateIssuesOnMavenDependenciesSensor implements Sensor {
             }
 
             /* Scan using our check */
-            check.scanFile(context, MavenDependencyRulesDefinition.RULE_MAVEN_ALLOWED, xmlFile);
+            check.scanFile(context, DependencyRulesDefinition.RULE_MAVEN_ALLOWED, xmlFile);
         }
     }
 

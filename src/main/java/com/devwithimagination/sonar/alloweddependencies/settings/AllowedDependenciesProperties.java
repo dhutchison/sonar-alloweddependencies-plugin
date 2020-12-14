@@ -12,7 +12,7 @@ import org.sonar.api.config.PropertyDefinition;
 public class AllowedDependenciesProperties {
 
   /**
-   * The name of the category to display these settings in within the Sonarqube UI.
+   * The name of the category to display these settings in within the SonarQube UI.
    */
   public static final String CATEGORY = "Allowed Dependencies";
 

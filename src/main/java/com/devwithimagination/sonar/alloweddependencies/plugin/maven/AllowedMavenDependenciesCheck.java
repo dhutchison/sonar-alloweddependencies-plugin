@@ -1,4 +1,4 @@
-package com.devwithimagination.sonar.alloweddependencies.maven;
+package com.devwithimagination.sonar.alloweddependencies.plugin.maven;
 
 import java.util.ArrayList;
 import java.util.List;
