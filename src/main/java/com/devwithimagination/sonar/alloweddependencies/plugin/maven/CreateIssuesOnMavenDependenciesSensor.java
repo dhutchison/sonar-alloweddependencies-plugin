@@ -1,13 +1,10 @@
 package com.devwithimagination.sonar.alloweddependencies.plugin.maven;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.devwithimagination.sonar.alloweddependencies.plugin.rules.DependencyRulesDefinition;
-import com.devwithimagination.sonar.alloweddependencies.settings.AllowedDependenciesProperties;
 
 import org.sonar.api.batch.fs.FileSystem;
 import org.sonar.api.batch.fs.InputFile;
@@ -57,12 +54,13 @@ public class CreateIssuesOnMavenDependenciesSensor implements Sensor {
     @Override
     public void execute(SensorContext context) {
 
-        /* Load our configuration for allowed dependencies */
-        final List<String> allowedDependencies = getAllowedDependencies();
-        LOG.info("Allowed dependencies: '{}'", allowedDependencies);
-
-        /* Create our rule checker */
-        final AllowedMavenDependenciesCheck check = new AllowedMavenDependenciesCheck(allowedDependencies);
+        /* Create our rule checkers, one per active template rule */
+        final List<AllowedMavenDependenciesCheck> checks = context.activeRules()
+            .findByRepository(DependencyRulesDefinition.REPOSITORY_MAVEN)
+            .stream()
+            .filter(rule -> DependencyRulesDefinition.RULE_MAVEN_ALLOWED.rule().equals(rule.templateRuleKey()))
+            .map(AllowedMavenDependenciesCheck::new)
+            .collect(Collectors.toList());
 
         /*
          * Scan for the xml files for the project. We use this predicate so we (may)
@@ -95,28 +93,8 @@ public class CreateIssuesOnMavenDependenciesSensor implements Sensor {
                 return;
             }
 
-            /* Scan using our check */
-            check.scanFile(context, DependencyRulesDefinition.RULE_MAVEN_ALLOWED, xmlFile);
+            /* Scan using our checks */
+            checks.forEach(check -> check.scanFile(context, DependencyRulesDefinition.RULE_MAVEN_ALLOWED, xmlFile));
         }
-    }
-
-    /**
-     * Get the list of allowed dependencies loaded from the configuration.
-     *
-     * @return list of strings, with the expected format of "groupId:artifactId".
-     *         This will always return a non-null value. The returned list will be
-     *         empty.
-     */
-    private List<String> getAllowedDependencies() {
-
-        Optional<String> allowedDependencies = config.get(AllowedDependenciesProperties.MAVEN_KEY);
-
-        if (allowedDependencies.isPresent()) {
-            /* Convert into a list based on lines */
-            return Arrays.asList(allowedDependencies.get().split("\\r?\\n"));
-        } else {
-            return Collections.emptyList();
-        }
-
     }
 }

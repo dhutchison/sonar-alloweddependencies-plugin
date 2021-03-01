@@ -1,9 +1,17 @@
 package com.devwithimagination.sonar.alloweddependencies.plugin.maven;
 
-import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import javax.xml.xpath.XPathExpression;
+
+import com.devwithimagination.sonar.alloweddependencies.settings.AllowedDependenciesProperties;
+
+import org.sonar.api.batch.rule.ActiveRule;
+import org.sonar.api.utils.log.Logger;
+import org.sonar.api.utils.log.Loggers;
 import org.sonarsource.analyzer.commons.xml.XmlFile;
 import org.sonarsource.analyzer.commons.xml.checks.SimpleXPathBasedCheck;
 import org.w3c.dom.Element;
@@ -14,12 +22,23 @@ import org.w3c.dom.Node;
  * dependencies in a pom.xml file against a list of approved dependencies,
  * raising issues for any which are not found.
  */
+
 public class AllowedMavenDependenciesCheck extends SimpleXPathBasedCheck {
+
+    /**
+     * The default scope to assign to a dependency if it is not defined in the pom.
+     */
+    private static final String DEFAULT_MAVEN_SCOPE = "compile";
+
+    /**
+     * Logger
+     */
+    private static final Logger LOG = Loggers.get(AllowedMavenDependenciesCheck.class);
 
     /**
      * The XPath Expression used to find maven dependency nodes in a pom file.
      */
-    private XPathExpression dependencyExpression = getXPathExpression("//dependencies/dependency");
+    private final XPathExpression dependencyExpression = getXPathExpression("//dependencies/dependency");
 
     /**
      * List containing the "groupId:artifactId" pairs for dependencies which are
@@ -28,20 +47,41 @@ public class AllowedMavenDependenciesCheck extends SimpleXPathBasedCheck {
     private final List<String> allowedDependencies;
 
     /**
-     * Create a new {@link AllowedMavenDependenciesCheck}.
-     *
-     * @param allowedDependencies list containing the "groupId:artifactId" pairs for
-     *                            dependencies which are allowed
+     * If a value is set for this, restrict to only dependencies with the given scope.
      */
-    public AllowedMavenDependenciesCheck(final List<String> allowedDependencies) {
+    private final String restrictToScope;
 
-        /* Null check first, then add */
-        this.allowedDependencies = new ArrayList<>();
 
-        if (allowedDependencies != null) {
-            this.allowedDependencies.addAll(allowedDependencies);
+    /**
+     * Create a new {@link AllowedMavenDependenciesCheck} based on an active rule.
+     * @param activeRuleDefinition the rule containing the parameter configuration.
+     *
+     * TODO: Add configuration for the dependency scope so we can use different active rules.
+     */
+    public AllowedMavenDependenciesCheck(final ActiveRule activeRuleDefinition) {
+
+        LOG.info("Creating AllowedMavenDependenciesCheck for {}", activeRuleDefinition.ruleKey());
+
+        /* Configure the allowed dependency coordinates */
+        final String deps = activeRuleDefinition.param(AllowedDependenciesProperties.MAVEN_KEY);
+
+        if (deps != null) {
+            /* Convert into a list based on lines */
+            this.allowedDependencies = Arrays.asList(deps.split("\\r?\\n"));
+        } else {
+            this.allowedDependencies = Collections.emptyList();
         }
 
+        LOG.info("Allowed dependencies: '{}'", this.allowedDependencies);
+
+        /* Configure the check scope */
+        final String checkScope = activeRuleDefinition.param(AllowedDependenciesProperties.MAVEN_SCOPE_KEY);
+
+        if (checkScope == null || checkScope.isEmpty()) {
+            this.restrictToScope = null;
+        } else {
+            this.restrictToScope = checkScope;
+        }
     }
 
     @Override
@@ -56,12 +96,15 @@ public class AllowedMavenDependenciesCheck extends SimpleXPathBasedCheck {
              */
             evaluateAsList(dependencyExpression, xmlFile.getNamespaceUnawareDocument()).forEach(dependency -> {
 
-                final String groupId = getChildElementText("groupId", dependency);
-                final String artifactId = getChildElementText("artifactId", dependency);
+                final String groupId = getChildElementText("groupId", dependency, null);
+                final String artifactId = getChildElementText("artifactId", dependency, null);
+                final String scope = getChildElementText("scope", dependency, DEFAULT_MAVEN_SCOPE);
 
                 final String listKey = groupId + ":" + artifactId;
 
-                if (!allowedDependencies.contains(listKey)) {
+                if ((restrictToScope == null || restrictToScope.equals(scope)) &&
+                    !allowedDependencies.contains(listKey)) {
+
                     reportIssue(dependency, "Remove this forbidden dependency.");
                 }
             });
@@ -73,8 +116,9 @@ public class AllowedMavenDependenciesCheck extends SimpleXPathBasedCheck {
      *
      * @param childElementName the name of the element to find
      * @param parent           the node to look for children of
+     * @param defaultValue the default value to return if a match is not found.
      */
-    private static String getChildElementText(final String childElementName, final Node parent) {
+    private static String getChildElementText(final String childElementName, final Node parent, final String defaultValue) {
 
         for (Node node : XmlFile.children(parent)) {
             if (node.getNodeType() == Node.ELEMENT_NODE && ((Element) node).getTagName().equals(childElementName)) {
@@ -82,6 +126,6 @@ public class AllowedMavenDependenciesCheck extends SimpleXPathBasedCheck {
             }
         }
 
-        return "";
+        return defaultValue;
     }
 }

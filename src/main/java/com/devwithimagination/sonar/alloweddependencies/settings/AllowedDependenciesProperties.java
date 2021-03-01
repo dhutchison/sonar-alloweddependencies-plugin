@@ -1,6 +1,7 @@
 package com.devwithimagination.sonar.alloweddependencies.settings;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.sonar.api.PropertyType;
@@ -22,6 +23,11 @@ public class AllowedDependenciesProperties {
   public static final String MAVEN_KEY = "sonar.allowed-dependencies.maven";
 
   /**
+   * The setting parameter for the maven rule scope.
+   */
+  public static final String MAVEN_SCOPE_KEY = "sonar.allowed-dependencies.maven.scope";
+
+  /**
    * The setting key for the NPM allowed dependency list.
    */
   public static final String NPM_KEY = "sonar.allowed-dependencies.npm";
@@ -38,22 +44,25 @@ public class AllowedDependenciesProperties {
    * @return the list of property definitions.
    */
   public static List<PropertyDefinition> getProperties() {
-    return Arrays.asList(
 
-      PropertyDefinition.builder(MAVEN_KEY)
-        .name("Allowed Maven Dependencies")
-        .description("Newline seperated list of <groupId>:<artifactId> items")
-        .category(CATEGORY)
-        .type(PropertyType.TEXT)
-        .build(),
+    return Collections.emptyList();
 
-        PropertyDefinition.builder(NPM_KEY)
-        .name("Allowed NPM Dependencies")
-        .description("Newline seperated list of dependencies items")
-        .category(CATEGORY)
-        .type(PropertyType.TEXT)
-        .build()
-    );
+    // return Arrays.asList(
+
+    //   PropertyDefinition.builder(MAVEN_KEY)
+    //     .name("Allowed Maven Dependencies")
+    //     .description("Newline seperated list of <groupId>:<artifactId> items")
+    //     .category(CATEGORY)
+    //     .type(PropertyType.TEXT)
+    //     .build(),
+
+    //     PropertyDefinition.builder(NPM_KEY)
+    //     .name("Allowed NPM Dependencies")
+    //     .description("Newline seperated list of dependencies items")
+    //     .category(CATEGORY)
+    //     .type(PropertyType.TEXT)
+    //     .build()
+    // );
   }
 
 }

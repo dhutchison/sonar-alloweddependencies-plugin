@@ -1,89 +1,111 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>com.devwithimagination</groupId>
-  <!-- it's recommended to follow the pattern "sonar-{key}-plugin", for example "sonar-php-plugin" -->
-  <artifactId>sonar-alloweddependencies-plugin</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.devwithimagination</groupId>
+    <!-- it's recommended to follow the pattern "sonar-{key}-plugin", for example "sonar-php-plugin" -->
+    <artifactId>sonar-alloweddependencies-plugin</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
 
-  <licenses>
-      <license>
-          <name>MIT</name>
-          <url>https://spdx.org/licenses/MIT.html</url>
-      </license>
-  </licenses>
+    <licenses>
+        <license>
+            <name>MIT</name>
+            <url>https://spdx.org/licenses/MIT.html</url>
+        </license>
+    </licenses>
 
-  <!-- this is important for sonar-packaging-maven-plugin -->
-  <packaging>sonar-plugin</packaging>
+    <!-- this is important for sonar-packaging-maven-plugin -->
+    <packaging>sonar-plugin</packaging>
 
-  <description>Plugin for scanning projects against an approved dependency list</description>
+    <description>Plugin for scanning projects against an approved dependency list</description>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <java.version>8</java.version>
-    <sonar.sources>src/main/java,pom.xml</sonar.sources>
-  </properties>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <java.version>8</java.version>
+        <sonar.sources>src/main/java,pom.xml</sonar.sources>
+    </properties>
 
-  <dependencies>
-    <!-- Core Sonarqube plugin API -->
-    <dependency>
-      <groupId>org.sonarsource.sonarqube</groupId>
-      <artifactId>sonar-plugin-api</artifactId>
-      <!-- minimal version of SonarQube to support. -->
-      <version>7.9.5</version>
-      <!-- mandatory scope -->
-      <scope>provided</scope>
-    </dependency>
+    <dependencies>
+        <!-- Core Sonarqube plugin API -->
+        <dependency>
+            <groupId>org.sonarsource.sonarqube</groupId>
+            <artifactId>sonar-plugin-api</artifactId>
+            <!-- minimal version of SonarQube to support. -->
+            <version>7.9.5</version>
+            <!-- mandatory scope -->
+            <scope>provided</scope>
+        </dependency>
 
-    <!-- Common analyser utilities -->
-    <dependency>
-      <groupId>org.sonarsource.analyzer-commons</groupId>
-      <artifactId>sonar-xml-parsing</artifactId>
-      <version>1.12.0.632</version>
-    </dependency>
+        <!-- Common analyser utilities -->
+        <dependency>
+            <groupId>org.sonarsource.analyzer-commons</groupId>
+            <artifactId>sonar-xml-parsing</artifactId>
+            <version>1.12.0.632</version>
+        </dependency>
 
-    <!-- JSON parser library -->
-    <dependency>
-      <groupId>org.glassfish</groupId>
-      <artifactId>javax.json</artifactId>
-      <version>1.1.4</version>
-    </dependency>
-  </dependencies>
+        <!-- JSON parser library -->
+        <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>javax.json</artifactId>
+            <version>1.1.4</version>
+        </dependency>
+    </dependencies>
 
-  <build>
-    <pluginManagement>
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.8.1</version>
+                    <configuration>
+                        <source>${java.version}</source>
+                        <target>${java.version}</target>
+                        <!--<release>${java.version}</release>-->
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.sonatype.ossindex.maven</groupId>
+                    <artifactId>ossindex-maven-plugin</artifactId>
+                    <version>3.1.0</version>
+                    <executions>
+                        <execution>
+                            <id>audit-dependencies</id>
+                            <phase>validate</phase>
+                            <goals>
+                                <goal>audit</goal>
+                            </goals>
+                            <configuration>
+                                <fail>false</fail>
+                                <reportFile>target/ossindex/ossindex-report.json</reportFile>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
         <plugins>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <version>3.8.1</version>
-            <configuration>
-              <source>${java.version}</source>
-              <target>${java.version}</target>
-              <!--<release>${java.version}</release>-->
-            </configuration>
-          </plugin>
+            <plugin>
+                <groupId>org.sonarsource.sonar-packaging-maven-plugin</groupId>
+                <artifactId>sonar-packaging-maven-plugin</artifactId>
+                <version>1.18.0.372</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <!-- the entry-point class that extends org.sonar.api.SonarPlugin -->
+                    <pluginClass>com.devwithimagination.sonar.alloweddependencies.AllowedDependenciesPlugin</pluginClass>
+
+                    <!-- advanced properties can be set here. See paragraph "Advanced Build Properties". -->
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.ossindex.maven</groupId>
+                <artifactId>ossindex-maven-plugin</artifactId>
+            </plugin>
         </plugins>
-    </pluginManagement>
-
-    <plugins>
-      <plugin>
-        <groupId>org.sonarsource.sonar-packaging-maven-plugin</groupId>
-        <artifactId>sonar-packaging-maven-plugin</artifactId>
-        <version>1.18.0.372</version>
-        <extensions>true</extensions>
-        <configuration>
-          <!-- the entry-point class that extends org.sonar.api.SonarPlugin -->
-          <pluginClass>com.devwithimagination.sonar.alloweddependencies.AllowedDependenciesPlugin</pluginClass>
-
-          <!-- advanced properties can be set here. See paragraph "Advanced Build Properties". -->
-        </configuration>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-      </plugin>
-    </plugins>
-  </build>
+    </build>
 </project>

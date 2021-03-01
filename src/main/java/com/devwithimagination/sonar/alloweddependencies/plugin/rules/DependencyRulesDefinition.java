@@ -1,8 +1,11 @@
 package com.devwithimagination.sonar.alloweddependencies.plugin.rules;
 
+import com.devwithimagination.sonar.alloweddependencies.settings.AllowedDependenciesProperties;
+
 import org.sonar.api.rule.RuleKey;
 import org.sonar.api.rule.RuleStatus;
 import org.sonar.api.rule.Severity;
+import org.sonar.api.server.rule.RuleParamType;
 import org.sonar.api.server.rule.RulesDefinition;
 
 /**
@@ -55,6 +58,13 @@ public class DependencyRulesDefinition implements RulesDefinition {
       .setName("Allowed Dependencies (Maven)")
       .setHtmlDescription("Generates an issue for every Maven dependency which is not in the allowed list")
 
+      /* Configure as a template rule so we can set parameters on it when it is added to the profile.
+       * The alternative here would have been to define properties at the plugin value for approved
+       * dependencies, but that would mean we could not have different quality profiles with different versions
+       * of the rule.
+       */
+      .setTemplate(true)
+
       // optional tags
       .setTags("maven", "dependency")
 
@@ -66,6 +76,18 @@ public class DependencyRulesDefinition implements RulesDefinition {
 
       mavenAllowedRule.setDebtRemediationFunction(
           mavenAllowedRule.debtRemediationFunctions().linearWithOffset("1h", "30min"));
+
+    /* Configure the parameters we want to configure in our rule template */
+    mavenAllowedRule.createParam(AllowedDependenciesProperties.MAVEN_KEY)
+        .setName("Allowed Maven Dependencies")
+        .setDescription("Newline seperated list of <groupId>:<artifactId> items")
+        .setType(RuleParamType.TEXT);
+
+    mavenAllowedRule.createParam(AllowedDependenciesProperties.MAVEN_SCOPE_KEY)
+        .setName("Check scope")
+        .setDescription("Maven scope to restrict checks to")
+        .setDefaultValue(null)
+        .setType(RuleParamType.STRING);
 
     // don't forget to call done() to finalize the definition
     javaRepository.done();
@@ -83,6 +105,13 @@ public class DependencyRulesDefinition implements RulesDefinition {
       .setName("Allowed Dependencies (NPM)")
       .setHtmlDescription("Generates an issue for every NPM dependency which is not in the allowed list")
 
+      /* Configure as a template rule so we can set parameters on it when it is added to the profile.
+       * The alternative here would have been to define properties at the plugin value for approved
+       * dependencies, but that would mean we could not have different quality profiles with different versions
+       * of the rule.
+       */
+      .setTemplate(true)
+
       // optional tags
       .setTags("npm", "dependency")
 
@@ -94,6 +123,12 @@ public class DependencyRulesDefinition implements RulesDefinition {
 
     npmAllowedRule.setDebtRemediationFunction(
         npmAllowedRule.debtRemediationFunctions().linearWithOffset("1h", "30min"));
+
+    /* Configure the parameters we want to configure in our rule template */
+    npmAllowedRule.createParam(AllowedDependenciesProperties.NPM_KEY)
+        .setName("Allowed NPM Dependencies")
+        .setDescription("Newline seperated list of dependencies items")
+        .setType(RuleParamType.TEXT);
 
     // don't forget to call done() to finalize the definition
     npmRepository.done();
