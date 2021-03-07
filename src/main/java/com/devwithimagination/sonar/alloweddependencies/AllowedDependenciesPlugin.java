@@ -1,10 +1,10 @@
 
 package com.devwithimagination.sonar.alloweddependencies;
 
-import com.devwithimagination.sonar.alloweddependencies.plugin.maven.CreateIssuesOnMavenDependenciesSensor;
-import com.devwithimagination.sonar.alloweddependencies.plugin.npm.CreateIssuesOnNPMDependenciesSensor;
-import com.devwithimagination.sonar.alloweddependencies.plugin.rules.DependencyRulesDefinition;
-import com.devwithimagination.sonar.alloweddependencies.settings.AllowedDependenciesProperties;
+import com.devwithimagination.sonar.alloweddependencies.plugin.maven.rules.MavenRulesDefinition;
+import com.devwithimagination.sonar.alloweddependencies.plugin.maven.sensors.CreateIssuesOnMavenDependenciesSensor;
+import com.devwithimagination.sonar.alloweddependencies.plugin.npm.rules.NpmRulesDefinition;
+import com.devwithimagination.sonar.alloweddependencies.plugin.npm.sensor.CreateIssuesOnNPMDependenciesSensor;
 
 import org.sonar.api.Plugin;
 
@@ -15,14 +15,16 @@ public class AllowedDependenciesPlugin implements Plugin {
 
   @Override
   public void define(Context context) {
-    // Dependency rules
-    context.addExtensions(
-        DependencyRulesDefinition.class,
-        CreateIssuesOnMavenDependenciesSensor.class,
-        CreateIssuesOnNPMDependenciesSensor.class);
 
-    // Configuration settings
-    context.addExtensions(AllowedDependenciesProperties.getProperties());
+
+    context.addExtensions(
+        // Dependency rules
+        MavenRulesDefinition.class,
+        NpmRulesDefinition.class,
+        // Sensors for the checks
+        CreateIssuesOnMavenDependenciesSensor.class,
+        CreateIssuesOnNPMDependenciesSensor.class
+        );
 
   }
 }

@@ -1,13 +1,12 @@
-package com.devwithimagination.sonar.alloweddependencies.plugin.maven;
+package com.devwithimagination.sonar.alloweddependencies.plugin.maven.checks;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import javax.xml.xpath.XPathExpression;
 
-import com.devwithimagination.sonar.alloweddependencies.settings.AllowedDependenciesProperties;
+import com.devwithimagination.sonar.alloweddependencies.plugin.maven.rules.MavenRulesDefinition;
 
 import org.sonar.api.batch.rule.ActiveRule;
 import org.sonar.api.utils.log.Logger;
@@ -47,23 +46,22 @@ public class AllowedMavenDependenciesCheck extends SimpleXPathBasedCheck {
     private final List<String> allowedDependencies;
 
     /**
-     * If a value is set for this, restrict to only dependencies with the given scope.
+     * If a value is set for this, restrict to only dependencies with the given
+     * scope.
      */
     private final String restrictToScope;
 
-
     /**
      * Create a new {@link AllowedMavenDependenciesCheck} based on an active rule.
-     * @param activeRuleDefinition the rule containing the parameter configuration.
      *
-     * TODO: Add configuration for the dependency scope so we can use different active rules.
+     * @param activeRuleDefinition the rule containing the parameter configuration.
      */
     public AllowedMavenDependenciesCheck(final ActiveRule activeRuleDefinition) {
 
         LOG.info("Creating AllowedMavenDependenciesCheck for {}", activeRuleDefinition.ruleKey());
 
         /* Configure the allowed dependency coordinates */
-        final String deps = activeRuleDefinition.param(AllowedDependenciesProperties.MAVEN_KEY);
+        final String deps = activeRuleDefinition.param(MavenRulesDefinition.DEPS_PARAM_KEY);
 
         if (deps != null) {
             /* Convert into a list based on lines */
@@ -75,7 +73,7 @@ public class AllowedMavenDependenciesCheck extends SimpleXPathBasedCheck {
         LOG.info("Allowed dependencies: '{}'", this.allowedDependencies);
 
         /* Configure the check scope */
-        final String checkScope = activeRuleDefinition.param(AllowedDependenciesProperties.MAVEN_SCOPE_KEY);
+        final String checkScope = activeRuleDefinition.param(MavenRulesDefinition.SCOPES_PARAM_KEY);
 
         if (checkScope == null || checkScope.isEmpty()) {
             this.restrictToScope = null;
@@ -102,8 +100,8 @@ public class AllowedMavenDependenciesCheck extends SimpleXPathBasedCheck {
 
                 final String listKey = groupId + ":" + artifactId;
 
-                if ((restrictToScope == null || restrictToScope.equals(scope)) &&
-                    !allowedDependencies.contains(listKey)) {
+                if ((restrictToScope == null || restrictToScope.equals(scope))
+                        && !allowedDependencies.contains(listKey)) {
 
                     reportIssue(dependency, "Remove this forbidden dependency.");
                 }
@@ -116,9 +114,10 @@ public class AllowedMavenDependenciesCheck extends SimpleXPathBasedCheck {
      *
      * @param childElementName the name of the element to find
      * @param parent           the node to look for children of
-     * @param defaultValue the default value to return if a match is not found.
+     * @param defaultValue     the default value to return if a match is not found.
      */
-    private static String getChildElementText(final String childElementName, final Node parent, final String defaultValue) {
+    private static String getChildElementText(final String childElementName, final Node parent,
+            final String defaultValue) {
 
         for (Node node : XmlFile.children(parent)) {
             if (node.getNodeType() == Node.ELEMENT_NODE && ((Element) node).getTagName().equals(childElementName)) {
