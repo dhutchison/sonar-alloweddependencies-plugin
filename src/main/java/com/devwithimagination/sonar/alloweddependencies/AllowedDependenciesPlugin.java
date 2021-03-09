@@ -1,9 +1,10 @@
 
 package com.devwithimagination.sonar.alloweddependencies;
 
-import com.devwithimagination.sonar.alloweddependencies.plugin.rules.CreateIssuesOnMavenDependenciesSensor;
-import com.devwithimagination.sonar.alloweddependencies.plugin.rules.MavenDependencyRulesDefinition;
-import com.devwithimagination.sonar.alloweddependencies.settings.AllowedDependenciesProperties;
+import com.devwithimagination.sonar.alloweddependencies.plugin.maven.rules.MavenRulesDefinition;
+import com.devwithimagination.sonar.alloweddependencies.plugin.maven.sensors.CreateIssuesOnMavenDependenciesSensor;
+import com.devwithimagination.sonar.alloweddependencies.plugin.npm.rules.NpmRulesDefinition;
+import com.devwithimagination.sonar.alloweddependencies.plugin.npm.sensor.CreateIssuesOnNPMDependenciesSensor;
 
 import org.sonar.api.Plugin;
 
@@ -14,11 +15,16 @@ public class AllowedDependenciesPlugin implements Plugin {
 
   @Override
   public void define(Context context) {
-    // Maven dependency rules
-    context.addExtensions(MavenDependencyRulesDefinition.class, CreateIssuesOnMavenDependenciesSensor.class);
 
-    // Configuration settings
-    context.addExtensions(AllowedDependenciesProperties.getProperties());
+
+    context.addExtensions(
+        // Dependency rules
+        MavenRulesDefinition.class,
+        NpmRulesDefinition.class,
+        // Sensors for the checks
+        CreateIssuesOnMavenDependenciesSensor.class,
+        CreateIssuesOnNPMDependenciesSensor.class
+        );
 
   }
 }

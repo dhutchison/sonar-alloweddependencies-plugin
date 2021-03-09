@@ -1,0 +1,20 @@
+{
+  "name": "test-project",
+  "version": "0.0.1",
+  "scripts": {
+  },
+  "private": true,
+  "dependencies": {
+    "primeicons": "^4.1.0",
+    "primeng": "^11.0.0",
+    "rxjs": "^6.6.3",
+    "tslib": "^2.0.0",
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "@angular/cli": "^11.0.5",
+    "@angular/compiler-cli": "^11.0.5",
+    "@angular/language-service": "^11.0.5",
+    "@cypress/code-coverage": "^3.8.8"
+  }
+}
