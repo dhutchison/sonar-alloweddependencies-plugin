@@ -1,28 +1,19 @@
 package com.devwithimagination.sonar.alloweddependencies.plugin.npm.sensor;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.stream.Collectors;
 
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-
+import com.devwithimagination.sonar.alloweddependencies.plugin.npm.checks.AllowedNpmDependenciesCheck;
 import com.devwithimagination.sonar.alloweddependencies.plugin.npm.rules.NpmRulesDefinition;
 
 import org.sonar.api.batch.fs.FileSystem;
 import org.sonar.api.batch.fs.InputFile;
-import org.sonar.api.batch.rule.ActiveRule;
 import org.sonar.api.batch.sensor.Sensor;
 import org.sonar.api.batch.sensor.SensorContext;
 import org.sonar.api.batch.sensor.SensorDescriptor;
-import org.sonar.api.batch.sensor.issue.NewIssue;
-import org.sonar.api.batch.sensor.issue.internal.DefaultIssueLocation;
 import org.sonar.api.config.Configuration;
+import org.sonar.api.rule.RuleKey;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
 
@@ -35,6 +26,13 @@ import org.sonar.api.utils.log.Loggers;
 public class CreateIssuesOnNPMDependenciesSensor implements Sensor {
 
     private static final Logger LOG = Loggers.get(CreateIssuesOnNPMDependenciesSensor.class);
+
+    /**
+     * The rules this sensor supports.
+     */
+    private static final List<RuleKey> SUPPORTED_KEYS = Arrays.asList(
+            NpmRulesDefinition.RULE_NPM_ALLOWED,
+            NpmRulesDefinition.RULE_NPM_ALLOWED_DEV);
 
     protected final Configuration config;
 
@@ -64,16 +62,16 @@ public class CreateIssuesOnNPMDependenciesSensor implements Sensor {
     @Override
     public void execute(final SensorContext context) {
 
-        /* Get the enabled rule config */
-        final ActiveRule activeRule = context.activeRules().find(NpmRulesDefinition.RULE_NPM_ALLOWED);
+        /* Create our rule checkers, one per active template rule */
+        final List<AllowedNpmDependenciesCheck> checks = context.activeRules()
+                .findByRepository(NpmRulesDefinition.REPOSITORY_NPM)
+                .stream()
+                .filter(rule -> SUPPORTED_KEYS.contains(rule.ruleKey()))
+                .map(AllowedNpmDependenciesCheck::new)
+                .collect(Collectors.toList());
 
-        /* Only scan if the rule is active */
-        if (activeRule != null) {
-
-            /* Load our configuration for allowed dependencies */
-            final List<String> allowedDependencies = getAllowedDependencies(activeRule);
-            final boolean devDependencies = getDevDependencyScope(activeRule);
-            LOG.info("Allowed NPM dependencies: '{}'", allowedDependencies);
+        /* Only scan files if we have an enabled rule */
+        if (!checks.isEmpty()) {
 
             /*
              * Scan for the package.json files for the project. We use this predicate so we
@@ -91,106 +89,9 @@ public class CreateIssuesOnNPMDependenciesSensor implements Sensor {
 
                 LOG.info("Input file {}", inputFile);
 
-                /* Need to read the file and extract the dependencies */
-                final Set<String> dependencies = parseDependencies(inputFile, devDependencies);
-
-                /*
-                 * Iterate through the dependencies and create issues for any not on the allow
-                 * list
-                 */
-                dependencies.forEach(dep -> {
-                    if (!allowedDependencies.contains(dep)) {
-                        createIssue(inputFile, dep, context);
-                    }
-                });
+                /* Scan using our checks */
+                checks.forEach(check -> check.scanFile(inputFile, context));
             }
         }
-    }
-
-    /**
-     * Get the list of allowed dependencies loaded from the configuration.
-     *
-     * @param activeRule the active rule definition to load parameters from
-     *
-     * @return list of strings, which are package names. This will always return a
-     *         non-null value. The returned list will be empty.
-     */
-    private List<String> getAllowedDependencies(final ActiveRule activeRule) {
-
-        final String allowedDependencies = activeRule.param(NpmRulesDefinition.DEPS_PARAM_KEY);
-
-        if (allowedDependencies != null) {
-            /* Convert into a list based on lines */
-            return Arrays.asList(allowedDependencies.split("\\r?\\n"));
-        } else {
-            return Collections.emptyList();
-        }
-
-    }
-
-    /**
-     * Get a boolean representing if the scan scope is for dev dependencies or
-     * regular dependencies.
-     *
-     * @param activeRule the active rule definition to load parameters from
-     * @return true if <code>devDependencies</code> are to be checked, false for
-     *         <code>dependencies</code>.
-     */
-    private boolean getDevDependencyScope(final ActiveRule activeRule) {
-
-        final String param = activeRule.param(NpmRulesDefinition.SCOPES_PARAM_KEY);
-
-        return Boolean.parseBoolean(param);
-    }
-
-    /**
-     * Parse out the dependencies held in the given input file.
-     *
-     * @param packageJsonFile the input file
-     * @param devDependencies boolean representing if <code>devDependencies</code> (true) or <code>dependencies</code>(false) should be scanned.
-     * @return set containing the dependency names. This will always return a
-     *         non-null value.
-     */
-    private Set<String> parseDependencies(final InputFile packageJsonFile, boolean devDependencies) {
-
-        final Set<String> dependencies = new HashSet<>();
-
-        try (InputStream in = packageJsonFile.inputStream(); JsonReader jsonReader = Json.createReader(in)) {
-
-            JsonObject packageJson = jsonReader.readObject();
-
-            final String jsonObjectName;
-            if (devDependencies) {
-                jsonObjectName = "devDependencies";
-            } else {
-                jsonObjectName = "dependencies";
-            }
-
-            final JsonObject packageJsonDependencies = packageJson.getJsonObject(jsonObjectName);
-            if (packageJsonDependencies != null) {
-                dependencies.addAll(packageJsonDependencies.keySet());
-            }
-        } catch (IOException e) {
-            LOG.error("Error reading package.json", e);
-        }
-
-        return dependencies;
-    }
-
-    /**
-     * Creates a new issue for our rule violation.
-     *
-     * @param inputFile     the file being scanned
-     * @param dependency    the name of the dependency which was found
-     * @param sensorContext the sensor context
-     */
-    private void createIssue(final InputFile inputFile, final String dependency, final SensorContext sensorContext) {
-
-        LOG.info("Dependency " + dependency + " is not on the allowed list");
-
-        NewIssue issue = sensorContext.newIssue().forRule(NpmRulesDefinition.RULE_NPM_ALLOWED)
-                .at(new DefaultIssueLocation().on(inputFile)
-                        .message("Dependency " + dependency + " is not on the allowed list"));
-        issue.save();
     }
 }

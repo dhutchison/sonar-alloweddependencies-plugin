@@ -2,21 +2,18 @@ package com.devwithimagination.sonar.alloweddependencies.plugin.npm.rules;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.sonar.api.server.rule.RulesDefinition.Context;
 import org.sonar.api.server.rule.RulesDefinition.Repository;
-import org.sonar.api.server.rule.RulesDefinition.Rule;
 
 /**
  * Test case for checking that rule definition works as expected.
  */
-public class TestNpmRulesDefinition {
+class TestNpmRulesDefinition {
 
     @Test
-    public void checkRuleCreation() {
+    void checkRuleCreation() {
 
         /* SonarQube context */
         final Context context = new Context();
@@ -41,9 +38,8 @@ public class TestNpmRulesDefinition {
 
         assertEquals(NpmRulesDefinition.REPOSITORY_NPM, repository.key());
         assertEquals(NpmRulesDefinition.NPM_DEPENDENCY_LANGUAGE, repository.language());
+        assertEquals(2, repository.rules().size(), "Expected two rules, one for each type of dependency");
         // TODO: Implement
-        // assertEquals(2, repository.rules().size(), "Expected two rules, one for each
-        // type of dependency");
 
     }
 
