@@ -23,7 +23,7 @@ import org.sonar.api.rule.RuleKey;
 /**
  * Test case for {@link CreateIssuesOnMavenDependenciesSensor}.
  */
-public class TestCreateIssuesOnMavenDependenciesSensor {
+class TestCreateIssuesOnMavenDependenciesSensor {
 
     /**
      * The sensor under test

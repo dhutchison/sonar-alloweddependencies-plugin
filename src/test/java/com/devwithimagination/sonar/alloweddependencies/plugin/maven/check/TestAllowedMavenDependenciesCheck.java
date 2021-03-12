@@ -1,7 +1,5 @@
 package com.devwithimagination.sonar.alloweddependencies.plugin.maven.check;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -18,7 +16,6 @@ import com.devwithimagination.sonar.alloweddependencies.plugin.maven.checks.Allo
 import com.devwithimagination.sonar.alloweddependencies.plugin.maven.rules.MavenRulesDefinition;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -31,7 +28,7 @@ import org.sonar.api.batch.sensor.issue.internal.DefaultIssue;
 import org.sonar.api.rule.RuleKey;
 import org.sonarsource.analyzer.commons.xml.XmlFile;
 
-public class TestAllowedMavenDependenciesCheck {
+class TestAllowedMavenDependenciesCheck {
 
     /**
      * The file we will scan for tests.

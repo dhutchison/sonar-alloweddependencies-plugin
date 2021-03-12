@@ -29,7 +29,7 @@ import org.sonar.api.batch.sensor.internal.DefaultSensorDescriptor;
  *
  * This parameterised test will cover the common functionality.
  */
-public class TestCommonSensorBehavior {
+class TestCommonSensorBehavior {
 
     /**
      * Test the sensor desciptor gets populated.
