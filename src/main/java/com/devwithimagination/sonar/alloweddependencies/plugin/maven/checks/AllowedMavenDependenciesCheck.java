@@ -46,10 +46,10 @@ public class AllowedMavenDependenciesCheck extends SimpleXPathBasedCheck {
     private final List<String> allowedDependencies;
 
     /**
-     * If a value is set for this, restrict to only dependencies with the given
+     * If a non-empty value is set for this, restrict to only dependencies with the given
      * scope.
      */
-    private final String restrictToScope;
+    private final List<String> restrictToScopes;
 
     /**
      * Create a new {@link AllowedMavenDependenciesCheck} based on an active rule.
@@ -75,10 +75,10 @@ public class AllowedMavenDependenciesCheck extends SimpleXPathBasedCheck {
         /* Configure the check scope */
         final String checkScope = activeRuleDefinition.param(MavenRulesDefinition.SCOPES_PARAM_KEY);
 
-        if (checkScope == null || checkScope.isEmpty()) {
-            this.restrictToScope = null;
+        if (checkScope == null) {
+            this.restrictToScopes = Collections.emptyList();
         } else {
-            this.restrictToScope = checkScope;
+            this.restrictToScopes = Arrays.asList(checkScope.split(","));
         }
     }
 
@@ -100,7 +100,7 @@ public class AllowedMavenDependenciesCheck extends SimpleXPathBasedCheck {
 
                 final String listKey = groupId + ":" + artifactId;
 
-                if ((restrictToScope == null || restrictToScope.equals(scope))
+                if ((restrictToScopes.isEmpty() || restrictToScopes.contains(scope))
                         && !allowedDependencies.contains(listKey)) {
 
                     reportIssue(dependency, "Remove this forbidden dependency.");
