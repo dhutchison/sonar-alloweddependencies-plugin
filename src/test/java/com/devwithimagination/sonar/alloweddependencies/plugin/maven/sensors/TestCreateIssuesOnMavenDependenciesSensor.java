@@ -55,10 +55,6 @@ class TestCreateIssuesOnMavenDependenciesSensor {
             new NewActiveRule.Builder()
                 .setRuleKey(RuleKey.of(MavenRulesDefinition.REPOSITORY_MAVEN, "my-rule-key"))
                 .setTemplateRuleKey(MavenRulesDefinition.RULE_MAVEN_ALLOWED.rule())
-                .build(),
-            /* A rule we don't support, that should be filtered out and not constructed into a check */
-            new NewActiveRule.Builder()
-                .setRuleKey(RuleKey.of(MavenRulesDefinition.REPOSITORY_MAVEN, "my-fake-untemplated-rule"))
                 .build()
         );
 

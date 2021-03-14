@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.devwithimagination.sonar.alloweddependencies.plugin.maven.checks.AllowedMavenDependenciesCheck;
+import com.devwithimagination.sonar.alloweddependencies.plugin.maven.checks.AllowedMavenDependenciesCheckConfig;
 import com.devwithimagination.sonar.alloweddependencies.plugin.maven.rules.MavenRulesDefinition;
 
 import org.sonar.api.batch.fs.FileSystem;
@@ -59,7 +60,7 @@ public class CreateIssuesOnMavenDependenciesSensor implements Sensor {
         final List<AllowedMavenDependenciesCheck> checks = context.activeRules()
             .findByRepository(MavenRulesDefinition.REPOSITORY_MAVEN)
             .stream()
-            .filter(rule -> MavenRulesDefinition.RULE_MAVEN_ALLOWED.rule().equals(rule.templateRuleKey()))
+            .map(AllowedMavenDependenciesCheckConfig::new)
             .map(AllowedMavenDependenciesCheck::new)
             .collect(Collectors.toList());
 
@@ -98,7 +99,7 @@ public class CreateIssuesOnMavenDependenciesSensor implements Sensor {
                 }
 
                 /* Scan using our checks */
-                checks.forEach(check -> check.scanFile(context, MavenRulesDefinition.RULE_MAVEN_ALLOWED, xmlFile));
+                checks.forEach(check -> check.scanFile(context, check.getConfig().getRule().ruleKey(), xmlFile));
             }
         }
     }

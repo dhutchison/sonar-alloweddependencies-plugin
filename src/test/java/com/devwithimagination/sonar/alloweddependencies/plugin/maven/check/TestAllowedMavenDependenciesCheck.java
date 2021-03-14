@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.util.stream.Stream;
 
 import com.devwithimagination.sonar.alloweddependencies.plugin.maven.checks.AllowedMavenDependenciesCheck;
+import com.devwithimagination.sonar.alloweddependencies.plugin.maven.checks.AllowedMavenDependenciesCheckConfig;
 import com.devwithimagination.sonar.alloweddependencies.plugin.maven.rules.MavenRulesDefinition;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -84,7 +85,8 @@ class TestAllowedMavenDependenciesCheck {
         final ActiveRule rule = createTestRule(ruleKey, allowedDeps, dependencyScopes);
 
         /* Scan our test file, and confirm no issues were raised */
-        final AllowedMavenDependenciesCheck check = new AllowedMavenDependenciesCheck(rule);
+        final AllowedMavenDependenciesCheckConfig config = new AllowedMavenDependenciesCheckConfig(rule);
+        final AllowedMavenDependenciesCheck check = new AllowedMavenDependenciesCheck(config);
 
         check.scanFile(sensorContext, rule.ruleKey(), inputFile);
 
@@ -107,7 +109,8 @@ class TestAllowedMavenDependenciesCheck {
         final ActiveRule rule = createTestRule(ruleKey, allowedDeps, dependencyScopes);
 
         /* Scan our test file, and confirm the right number of issues were raised */
-        final AllowedMavenDependenciesCheck check = new AllowedMavenDependenciesCheck(rule);
+        final AllowedMavenDependenciesCheckConfig config = new AllowedMavenDependenciesCheckConfig(rule);
+        final AllowedMavenDependenciesCheck check = new AllowedMavenDependenciesCheck(config);
         check.scanFile(sensorContext, rule.ruleKey(), inputFile);
 
         verify(sensorContext, times(expectedIssues)).newIssue();
@@ -140,6 +143,8 @@ class TestAllowedMavenDependenciesCheck {
      */
     private static Stream<Arguments> provideNoViolationParameters() {
 
+        //TODO: Change this so it can use the actual test rule
+
         return Stream.of(
             Arguments.of(
                 "my-compile-deps",
@@ -170,6 +175,7 @@ class TestAllowedMavenDependenciesCheck {
      */
     private static Stream<Arguments> provideViolationParameters() {
 
+        //TODO: Change one of these to use the main rule key setup
         return Stream.of(
             Arguments.of(
                 "no-compile-deps",
