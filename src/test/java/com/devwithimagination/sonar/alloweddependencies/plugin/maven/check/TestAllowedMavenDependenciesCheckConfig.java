@@ -82,12 +82,12 @@ class TestAllowedMavenDependenciesCheckConfig {
 
 
     /**
-     * Create a mock {@link ActiveRule} with the supplied configuration.
+     * Create a {@link ActiveRule} with the supplied configuration.
      *
      * @param ruleKey the rule key
      * @param allowedDeps the comma seperated dependency name string
      *
-     * @return a Mockito mock for the rule, configured with the expected values.
+     * @return a rule configured with the expected values.
      */
     private ActiveRule createTestRule(final RuleKey ruleKey, final String allowedDeps) {
 

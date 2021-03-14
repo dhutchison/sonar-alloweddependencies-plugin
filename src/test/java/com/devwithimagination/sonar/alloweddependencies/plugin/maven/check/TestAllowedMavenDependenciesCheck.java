@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.stream.Stream;
 
 import com.devwithimagination.sonar.alloweddependencies.plugin.maven.checks.AllowedMavenDependenciesCheck;
@@ -23,6 +24,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.sonar.api.batch.fs.InputFile;
 import org.sonar.api.batch.fs.internal.TestInputFileBuilder;
 import org.sonar.api.batch.rule.ActiveRule;
+import org.sonar.api.batch.rule.internal.DefaultActiveRules;
+import org.sonar.api.batch.rule.internal.NewActiveRule;
 import org.sonar.api.batch.sensor.SensorContext;
 import org.sonar.api.batch.sensor.internal.SensorStorage;
 import org.sonar.api.batch.sensor.issue.internal.DefaultIssue;
@@ -74,15 +77,11 @@ class TestAllowedMavenDependenciesCheck {
      * Creates tests for the dev and regular dependencies with all the appropriate test file
      * dependencies configured, to ensure we get no issues raised.
      *
-     * @param ruleKey the rule key the test is for
-     * @param allowedDeps the newline seperated list of allowed dependencies
+     * @param rule the rule being tested.
      */
     @ParameterizedTest
     @MethodSource("provideNoViolationParameters")
-    void checkForNoViolations(final String ruleKey, final String allowedDeps, final String dependencyScopes) {
-
-        /* Configure our rule with configuration */
-        final ActiveRule rule = createTestRule(ruleKey, allowedDeps, dependencyScopes);
+    void checkForNoViolations(final ActiveRule rule) {
 
         /* Scan our test file, and confirm no issues were raised */
         final AllowedMavenDependenciesCheckConfig config = new AllowedMavenDependenciesCheckConfig(rule);
@@ -97,16 +96,12 @@ class TestAllowedMavenDependenciesCheck {
      * Creates tests for the dev and regular dependencies with not all of the appropriate test file
      * dependencies configured, to ensure we get issues raised.
      *
-     * @param ruleKey the rule key the test is for
-     * @param allowedDeps the newline seperated list of allowed dependencies
+     * @param rule the rule being tested
      * @param expectedIssues the number of issues expected to be raised
      */
     @ParameterizedTest
     @MethodSource("provideViolationParameters")
-    void checkForViolations(final String ruleKey, final String allowedDeps, final String dependencyScopes, final int expectedIssues) {
-
-        /* Configure our rule with configuration */
-        final ActiveRule rule = createTestRule(ruleKey, allowedDeps, dependencyScopes);
+    void checkForViolations(final ActiveRule rule, final int expectedIssues) {
 
         /* Scan our test file, and confirm the right number of issues were raised */
         final AllowedMavenDependenciesCheckConfig config = new AllowedMavenDependenciesCheckConfig(rule);
@@ -118,52 +113,30 @@ class TestAllowedMavenDependenciesCheck {
     }
 
     /**
-     * Create a mock {@link ActiveRule} with the supplied configuration.
-     *
-     * @param ruleKey the rule key
-     * @param allowedDeps the comma seperated dependency name string
-     * @param restrictionScope the comman seperated dependency restriction scopes
-     *
-     * @return a Mockito mock for the rule, configured with the expected values.
-     */
-    private ActiveRule createTestRule(final String ruleKey, final String allowedDeps, final String restrictionScope) {
-
-        final ActiveRule rule = mock(ActiveRule.class);
-        when(rule.ruleKey()).thenReturn(RuleKey.of(MavenRulesDefinition.REPOSITORY_MAVEN, ruleKey));
-        when(rule.templateRuleKey()).thenReturn(MavenRulesDefinition.RULE_MAVEN_ALLOWED.rule());
-        when(rule.param(MavenRulesDefinition.DEPS_PARAM_KEY)).thenReturn(allowedDeps);
-        when(rule.param(MavenRulesDefinition.SCOPES_PARAM_KEY)).thenReturn(restrictionScope);
-
-        return rule;
-    }
-
-    /**
      * Method to create the parameters for {@link #checkForNoViolations()}.
      * @return Stream containing the argument pairs.
      */
     private static Stream<Arguments> provideNoViolationParameters() {
 
-        //TODO: Change this so it can use the actual test rule
-
         return Stream.of(
             Arguments.of(
-                "my-compile-deps",
-                "com.github.javafaker:javafaker",
-                "compile"),
+                createTemplatedTestRule(RuleKey.of(MavenRulesDefinition.REPOSITORY_MAVEN, "my-compile-deps"),
+                    "com.github.javafaker:javafaker",
+                    "compile"),
             Arguments.of(
-                "my-test-deps",
-                String.join("\n",
-                    "junit:junit",
-                    "com.nimbusds:nimbus-jose-jwt",
-                    "org.glassfish.jersey.core:jersey-client",
-                    "org.bouncycastle:bcpkix-jdk15on",
-                    "org.apache.logging.log4j:log4j-slf4j18-impl",
-                    "org.apache.cxf:cxf-rt-rs-mp-client",
-                    "org.eclipse.microprofile.rest.client:microprofile-rest-client-api",
-                    "com.opentable.components:otj-pg-embedded",
-                    "org.flywaydb:flyway-core",
-                    "org.jacoco:org.jacoco.agent"),
-                "test"
+                createNonTemplatedTestRule(
+                    MavenRulesDefinition.RULE_MAVEN_ALLOWED_TEST,
+                    String.join("\n",
+                        "junit:junit",
+                        "com.nimbusds:nimbus-jose-jwt",
+                        "org.glassfish.jersey.core:jersey-client",
+                        "org.bouncycastle:bcpkix-jdk15on",
+                        "org.apache.logging.log4j:log4j-slf4j18-impl",
+                        "org.apache.cxf:cxf-rt-rs-mp-client",
+                        "org.eclipse.microprofile.rest.client:microprofile-rest-client-api",
+                        "com.opentable.components:otj-pg-embedded",
+                        "org.flywaydb:flyway-core",
+                        "org.jacoco:org.jacoco.agent")))
             )
         );
 
@@ -178,40 +151,87 @@ class TestAllowedMavenDependenciesCheck {
         //TODO: Change one of these to use the main rule key setup
         return Stream.of(
             Arguments.of(
-                "no-compile-deps",
-                "",
-                "compile",
+                createTemplatedTestRule(RuleKey.of(MavenRulesDefinition.REPOSITORY_MAVEN, "no-compile-deps"),
+                    "",
+                    "compile"),
                 1),
             Arguments.of(
-                "no-provided-deps",
-                "",
-                "provided",
+                createTemplatedTestRule(RuleKey.of(MavenRulesDefinition.REPOSITORY_MAVEN, "no-provided-deps"),
+                    "",
+                    "provided"),
                 2),
             Arguments.of(
-                "no-combined-compile-provided-deps",
-                "",
-                "compile,provided",
+                createTemplatedTestRule(RuleKey.of(MavenRulesDefinition.REPOSITORY_MAVEN, "no-combined-compile-provided-deps"),
+                    "",
+                    "compile,provided"),
                 3),
             Arguments.of(
-                "some-combined-compile-provided-deps",
-                "javax.cache:cache-api",
-                "compile,provided",
+                createNonTemplatedTestRule(MavenRulesDefinition.RULE_MAVEN_ALLOWED_MAIN,
+                    "javax.cache:cache-api"),
                 2),
             Arguments.of(
-                "one-provided-deps",
-                "javax.cache:cache-api",
-                "provided",
+                createTemplatedTestRule(RuleKey.of(MavenRulesDefinition.REPOSITORY_MAVEN, "one-provided-deps"),
+                    "javax.cache:cache-api",
+                    "provided"),
                 1),
             Arguments.of(
-                "some-test-deps",
-                String.join("\n",
-                    "junit:junit",
-                    "com.nimbusds:nimbus-jose-jwt",
-                    "org.glassfish.jersey.core:jersey-client"),
-                "test",
+                createTemplatedTestRule(RuleKey.of(MavenRulesDefinition.REPOSITORY_MAVEN, "some-test-deps"),
+                    String.join("\n",
+                        "junit:junit",
+                        "com.nimbusds:nimbus-jose-jwt",
+                        "org.glassfish.jersey.core:jersey-client"),
+                    "test"),
+                7
+            ),
+            Arguments.of(
+                createNonTemplatedTestRule(MavenRulesDefinition.RULE_MAVEN_ALLOWED_TEST,
+                    String.join("\n",
+                        "junit:junit",
+                        "com.nimbusds:nimbus-jose-jwt",
+                        "org.glassfish.jersey.core:jersey-client")),
                 7
             )
         );
+
+    }
+
+    /**
+     * Create an {@link ActiveRule} with the supplied configuration.
+     *
+     * @param ruleKey the rule key
+     * @param allowedDeps the comma seperated dependency name string
+     *
+     * @return a rule configured with the expected values.
+     */
+    private static ActiveRule createNonTemplatedTestRule(final RuleKey ruleKey, final String allowedDeps) {
+
+        final NewActiveRule rule = new NewActiveRule.Builder()
+            .setRuleKey(ruleKey)
+            .setParam(MavenRulesDefinition.DEPS_PARAM_KEY, allowedDeps)
+            .build();
+
+        return new DefaultActiveRules(Arrays.asList(rule)).find(ruleKey);
+    }
+
+    /**
+     * Create an {@link ActiveRule} with the supplied configuration. Rules created by this method will be set as created by
+     * the templated rule, {@link MavenRulesDefinition#RULE_MAVEN_ALLOWED}.
+     *
+     * @param ruleKey the rule key
+     * @param allowedDeps the comma seperated dependency name string
+     *
+     * @return a rule configured with the expected values.
+     */
+    private static ActiveRule createTemplatedTestRule(final RuleKey ruleKey, final String allowedDeps, final String scopes) {
+
+        final NewActiveRule rule = new NewActiveRule.Builder()
+            .setRuleKey(ruleKey)
+            .setTemplateRuleKey(MavenRulesDefinition.RULE_MAVEN_ALLOWED.rule())
+            .setParam(MavenRulesDefinition.DEPS_PARAM_KEY, allowedDeps)
+            .setParam(MavenRulesDefinition.SCOPES_PARAM_KEY, scopes)
+            .build();
+
+        return new DefaultActiveRules(Arrays.asList(rule)).find(ruleKey);
 
     }
 
