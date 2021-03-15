@@ -4,6 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.junit.jupiter.api.Test;
 import org.sonar.api.server.rule.RulesDefinition.Context;
 import org.sonar.api.server.rule.RulesDefinition.Repository;
@@ -40,13 +43,31 @@ public class TestMavenRulesDefinition {
 
         assertEquals(MavenRulesDefinition.REPOSITORY_MAVEN, repository.key());
         assertEquals(MavenRulesDefinition.MAVEN_DEPENDENCY_LANGUAGE, repository.language());
-        assertEquals(1, repository.rules().size(), "Expected one templated rule");
+        assertEquals(3, repository.rules().size(), "Expected three rules");
 
-        final Rule rule = repository.rules().get(0);
-        assertNotNull(rule);
-        assertTrue(rule.template(), "Rule should be templated");
-        assertEquals(MavenRulesDefinition.RULE_MAVEN_ALLOWED.rule(), rule.key());
-        assertEquals(2, rule.params().size(), "Expecting two parameters");
+        /* Find the templated rule, and check the parameter count */
+        final List<Rule> templateRules = repository.rules()
+            .stream()
+            .filter(r -> r.template())
+            .collect(Collectors.toList());
+        assertEquals(1, templateRules.size(), "Expected one templated rule");
+
+        final Rule templateRule = templateRules.get(0);
+        assertEquals(MavenRulesDefinition.RULE_MAVEN_ALLOWED.rule(), templateRule.key());
+        assertEquals(2, templateRule.params().size(), "Expecting two parameters");
+
+        /* Check the other two rules, they should only have one parameter */
+        final List<Rule> nonTemplateRules = repository.rules()
+            .stream()
+            .filter(r -> !r.template())
+            .collect(Collectors.toList());
+        assertEquals(2, nonTemplateRules.size(), "Expected two non-templated rules");
+
+        assertTrue(nonTemplateRules.stream().anyMatch(r -> r.key().equals(MavenRulesDefinition.RULE_MAVEN_ALLOWED_MAIN.rule())),
+                "Expecting to find main scope rule");
+        assertTrue(nonTemplateRules.stream().anyMatch(r -> r.key().equals(MavenRulesDefinition.RULE_MAVEN_ALLOWED_TEST.rule())),
+                "Expecting to find test scope rule");
+        nonTemplateRules.forEach(r -> assertEquals(1, r.params().size(), "Expecting one parameter"));
     }
 
 }

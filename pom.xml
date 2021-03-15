@@ -21,7 +21,9 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>8</java.version>
+
         <sonar.sources>src/main/java,pom.xml</sonar.sources>
+        <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco-ut/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 
         <sonar.projectKey>dhutchison_sonar-alloweddependencies-plugin</sonar.projectKey>
         <sonar.organization>dhutchison</sonar.organization>
