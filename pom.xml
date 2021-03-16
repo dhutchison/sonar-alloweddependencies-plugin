@@ -18,6 +18,23 @@
 
     <description>Plugin for scanning projects against an approved dependency list</description>
 
+    <distributionManagement>
+        <repository>
+          <id>github</id>
+          <name>GitHub Packages</name>
+          <url>https://maven.pkg.github.com/dhutchison/sonar-alloweddependencies-plugin</url>
+        </repository>
+        <snapshotRepository>
+            <id>github</id>
+            <name>GitHub Packages - Snapshot</name>
+            <url>https://maven.pkg.github.com/dhutchison/sonar-alloweddependencies-plugin</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <scm>
+        <developerConnection>scm:git:https://github.com/dhutchison/sonar-alloweddependencies-plugin.git</developerConnection>
+    </scm>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>8</java.version>
