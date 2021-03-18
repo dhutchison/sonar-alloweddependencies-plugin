@@ -4,7 +4,7 @@
 
     <groupId>com.devwithimagination</groupId>
     <artifactId>sonar-alloweddependencies-plugin</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.1.1-SNAPSHOT</version>
 
     <licenses>
         <license>
@@ -33,7 +33,8 @@
 
     <scm>
         <developerConnection>scm:git:https://github.com/dhutchison/sonar-alloweddependencies-plugin.git</developerConnection>
-    </scm>
+      <tag>HEAD</tag>
+  </scm>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
