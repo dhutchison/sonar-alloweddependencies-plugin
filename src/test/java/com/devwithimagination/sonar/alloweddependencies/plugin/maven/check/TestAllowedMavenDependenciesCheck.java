@@ -122,22 +122,21 @@ class TestAllowedMavenDependenciesCheck {
             Arguments.of(
                 createTemplatedTestRule(RuleKey.of(MavenRulesDefinition.REPOSITORY_MAVEN, "my-compile-deps"),
                     "com.github.javafaker:javafaker",
-                    "compile"),
+                    "compile")),
             Arguments.of(
                 createNonTemplatedTestRule(
                     MavenRulesDefinition.RULE_MAVEN_ALLOWED_TEST,
                     String.join("\n",
                         "junit:junit",
+                        "regex:org\\.junit\\.jupiter:.*",
                         "com.nimbusds:nimbus-jose-jwt",
                         "org.glassfish.jersey.core:jersey-client",
                         "org.bouncycastle:bcpkix-jdk15on",
-                        "org.apache.logging.log4j:log4j-slf4j18-impl",
-                        "org.apache.cxf:cxf-rt-rs-mp-client",
+                        "regex:org\\.apache\\..*:.*",
                         "org.eclipse.microprofile.rest.client:microprofile-rest-client-api",
                         "com.opentable.components:otj-pg-embedded",
                         "org.flywaydb:flyway-core",
                         "org.jacoco:org.jacoco.agent")))
-            )
         );
 
     }
@@ -148,7 +147,6 @@ class TestAllowedMavenDependenciesCheck {
      */
     private static Stream<Arguments> provideViolationParameters() {
 
-        //TODO: Change one of these to use the main rule key setup
         return Stream.of(
             Arguments.of(
                 createTemplatedTestRule(RuleKey.of(MavenRulesDefinition.REPOSITORY_MAVEN, "no-compile-deps"),
@@ -178,6 +176,18 @@ class TestAllowedMavenDependenciesCheck {
                 createTemplatedTestRule(RuleKey.of(MavenRulesDefinition.REPOSITORY_MAVEN, "some-test-deps"),
                     String.join("\n",
                         "junit:junit",
+                        // Not the right groupId, shouldn't match
+                        "regex:org\\.junit:.*",
+                        "com.nimbusds:nimbus-jose-jwt",
+                        "org.glassfish.jersey.core:jersey-client"),
+                    "test"),
+                10
+            ),
+            Arguments.of(
+                createTemplatedTestRule(RuleKey.of(MavenRulesDefinition.REPOSITORY_MAVEN, "some-test-deps"),
+                    String.join("\n",
+                        "junit:junit",
+                        "regex:org\\.junit\\.jupiter:.*",
                         "com.nimbusds:nimbus-jose-jwt",
                         "org.glassfish.jersey.core:jersey-client"),
                     "test"),
@@ -189,7 +199,7 @@ class TestAllowedMavenDependenciesCheck {
                         "junit:junit",
                         "com.nimbusds:nimbus-jose-jwt",
                         "org.glassfish.jersey.core:jersey-client")),
-                7
+                10
             )
         );
 

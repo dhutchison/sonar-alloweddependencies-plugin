@@ -1,6 +1,7 @@
 package com.devwithimagination.sonar.alloweddependencies.plugin.maven.check;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
@@ -33,8 +34,7 @@ class TestAllowedMavenDependenciesCheckConfig {
         /* Create the config */
         final AllowedMavenDependenciesCheckConfig config = new AllowedMavenDependenciesCheckConfig(rule);
 
-        assertEquals(2, config.getAllowedDependencies().size(), "Expected 2 dependencies in the list");
-        assertEquals(Arrays.asList("abc:def", "org.junit:junit"), config.getAllowedDependencies(), "Expected dependencies to match");
+        assertNotNull(config.getAllowedDependenciesPredicate(), "Expected predicate to be created");
 
         assertEquals(3, config.getScopes().size(), "Expected 3 scopes");
         assertEquals(Arrays.asList("compile", "provided", "runtime"), config.getScopes(), "Expected scopes to match");
@@ -55,8 +55,7 @@ class TestAllowedMavenDependenciesCheckConfig {
         final AllowedMavenDependenciesCheckConfig config = new AllowedMavenDependenciesCheckConfig(rule);
 
         /* Perform assertions */
-        assertEquals(2, config.getAllowedDependencies().size(), "Expected 2 dependencies in the list");
-        assertEquals(Arrays.asList("abc:def", "group:artifact"), config.getAllowedDependencies(), "Expected dependencies to match");
+        assertNotNull(config.getAllowedDependenciesPredicate(), "Expected predicate to be created");
 
         assertEquals(1, config.getScopes().size(), "Expected 1 scope");
         assertEquals("test", config.getScopes().get(0));

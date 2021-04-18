@@ -80,7 +80,7 @@ class TestCreateIssuesOnMavenDependenciesSensor {
         sensor.execute(sensorContext);
 
         /* Verify things happened */
-        assertEquals(13, sensorContext.allIssues().size(), "Expecting violations for all dependencies");
+        assertEquals(17, sensorContext.allIssues().size(), "Expecting violations for all dependencies");
 
     }
 

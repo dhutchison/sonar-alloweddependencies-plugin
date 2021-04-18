@@ -2,17 +2,16 @@ package com.devwithimagination.sonar.alloweddependencies.plugin.npm.checks;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 
 import com.devwithimagination.sonar.alloweddependencies.plugin.npm.rules.NpmRulesDefinition;
+import com.devwithimagination.sonar.alloweddependencies.plugin.util.PredicateFactory;
 
 import org.sonar.api.batch.fs.InputFile;
 import org.sonar.api.batch.rule.ActiveRule;
@@ -36,10 +35,10 @@ public class AllowedNpmDependenciesCheck {
     private static final Logger LOG = Loggers.get(AllowedNpmDependenciesCheck.class);
 
     /**
-     * List containing the names for dependencies which are
+     * Predicate for matching against the names for dependencies which are
      * allowed.
      */
-    private final List<String> allowedDependencies;
+    private final Predicate<String> allowedDependenciesPredicate;
 
     /**
      * Boolean holding if this check is for development dependencies (true) or not (false).
@@ -61,18 +60,6 @@ public class AllowedNpmDependenciesCheck {
         LOG.info("Creating AllowedNpmDependenciesCheck for {}", activeRuleDefinition.ruleKey());
         this.ruleKey = activeRuleDefinition.ruleKey();
 
-        /* Configure the allowed dependency names */
-        final String deps = activeRuleDefinition.param(NpmRulesDefinition.DEPS_PARAM_KEY);
-
-        if (deps != null) {
-            /* Convert into a list based on lines */
-            this.allowedDependencies = Arrays.asList(deps.split("\\r?\\n"));
-        } else {
-            this.allowedDependencies = Collections.emptyList();
-        }
-
-        LOG.info("Allowed dependencies: '{}'", this.allowedDependencies);
-
         /* Configure the check scope */
         if (NpmRulesDefinition.RULE_NPM_ALLOWED.equals(activeRuleDefinition.ruleKey())) {
             devDependencies = false;
@@ -81,6 +68,11 @@ public class AllowedNpmDependenciesCheck {
         } else {
             throw new IllegalArgumentException("Unsupported rule key: " + activeRuleDefinition.ruleKey());
         }
+
+        /* Configure the allowed dependency names */
+        final String deps = activeRuleDefinition.param(NpmRulesDefinition.DEPS_PARAM_KEY);
+        final PredicateFactory predicateFactory = new PredicateFactory();
+        this.allowedDependenciesPredicate = predicateFactory.createPredicateForDependencyListString(deps);
     }
 
     /**
@@ -153,7 +145,7 @@ public class AllowedNpmDependenciesCheck {
          * list
          */
         dependencies.forEach(dep -> {
-            if (!allowedDependencies.contains(dep)) {
+            if (!allowedDependenciesPredicate.test(dep)) {
                 createIssue(inputFile, dep, sensorContext);
             }
         });

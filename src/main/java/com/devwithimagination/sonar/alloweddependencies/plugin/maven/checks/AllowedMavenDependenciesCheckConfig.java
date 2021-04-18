@@ -3,9 +3,11 @@ package com.devwithimagination.sonar.alloweddependencies.plugin.maven.checks;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import com.devwithimagination.sonar.alloweddependencies.plugin.maven.rules.MavenRulesDefinition;
+import com.devwithimagination.sonar.alloweddependencies.plugin.util.PredicateFactory;
 
 import org.sonar.api.batch.rule.ActiveRule;
 import org.sonar.api.utils.log.Logger;
@@ -28,10 +30,9 @@ public class AllowedMavenDependenciesCheckConfig {
     private final ActiveRule rule;
 
     /**
-     * List containing the "groupId:artifactId" pairs for dependencies which are
-     * allowed.
+     * Predicate created which can be used for matching dependencies against the configured the allowed dependency list.
      */
-    private final List<String> allowedDependencies;
+    private final Predicate<String> allowedDependenciesPredicate;
 
     /**
      * If a non-empty value is set for this, restrict to only dependencies with the
@@ -49,21 +50,10 @@ public class AllowedMavenDependenciesCheckConfig {
         LOG.info("Creating AllowedMavenDependenciesCheck for {}", activeRuleDefinition.ruleKey());
         this.rule = activeRuleDefinition;
 
-        /* Configure the allowed dependency coordinates */
+        /* Configure the allowed dependency predicate */
         final String deps = activeRuleDefinition.param(MavenRulesDefinition.DEPS_PARAM_KEY);
-
-        if (deps != null) {
-            /* Convert into a list based on lines */
-            this.allowedDependencies = Arrays.asList(deps.split("\\r?\\n"))
-                .stream()
-                .map(String::trim)
-                .sorted()
-                .collect(Collectors.toList());
-        } else {
-            this.allowedDependencies = Collections.emptyList();
-        }
-
-        LOG.info("Allowed dependencies: '{}'", this.allowedDependencies);
+        final PredicateFactory predicateFactory = new PredicateFactory();
+        this.allowedDependenciesPredicate = predicateFactory.createPredicateForDependencyListString(deps);
 
         /* Configure the check scope */
         this.restrictToScopes = getScopeConfiguration(activeRuleDefinition);
@@ -104,12 +94,12 @@ public class AllowedMavenDependenciesCheckConfig {
     }
 
     /**
-     * Get the allowed dependencies included in this configuration.
+     * Get the predicate for the allowed dependencies included in this configuration.
      *
-     * @return list of "<groupId>:<artifactId>" pairs
+     * @return created predicate.
      */
-    public List<String> getAllowedDependencies() {
-        return allowedDependencies;
+    public Predicate<String> getAllowedDependenciesPredicate() {
+        return allowedDependenciesPredicate;
     }
 
     /**
