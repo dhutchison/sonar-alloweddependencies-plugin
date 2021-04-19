@@ -69,7 +69,9 @@ public class AllowedMavenDependenciesCheck extends SimpleXPathBasedCheck {
                 final String listKey = groupId + ":" + artifactId;
 
                 if ((config.getScopes().isEmpty() || config.getScopes().contains(scope))
-                        && !config.getAllowedDependencies().contains(listKey)) {
+                        && !config.getAllowedDependenciesPredicate().test(listKey)) {
+
+                    LOG.info("Forbidden dependency: {}", listKey);
 
                     reportIssue(dependency, "Remove this forbidden dependency.");
                 }

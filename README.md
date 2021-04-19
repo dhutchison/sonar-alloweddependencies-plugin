@@ -40,7 +40,6 @@ Two rules are made available in the `JavaScript` language by this plugin:
 Both of these take a configuration element for a newline seperated list of dependencies which are allowed in a given scope (`devDependencies` and `dependencies` respectively). When a rule in enabled for a scope, a rule violation will be raised for any dependencies which are not in the allowed list.
 
 This plugin does not support:
-* wildcards in dependency names
 * version numbers
 * identifying the line of the `package.json` file that the violation occured at
 
@@ -59,6 +58,8 @@ Example configuration value for the `npmDependencies` parameter value:
 @typescript-eslint/parser
 ```
 
+The default behaviour is to treat each row as an exact string match. Rows can be prefixed with `regex:` to interpret them as a regular expression. For example, `regex:@angular-eslint/.*` will allow all dependencies in the `@angular-eslint` scope.
+
 ### Maven Rules
 
 Three rules are made available in the `Java` language by this plugin. Two of these are regular rules:
@@ -69,15 +70,14 @@ Three rules are made available in the `Java` language by this plugin. Two of the
 * Allowed Dependencies (template) - `allowed-dependencies-maven:maven-allowed-dependencies`
     * A template rule which allows custom rules to be created targeting a set list of scopes. This has an extra `mavenScopes` parameter for supplying a comma seperated list of scopes.
 
-Both of these take a configuration element for a newline seperated list of dependencies, as `groupId:artifactId` entries, which are allowed in the scopes associated with the rule. When a rule in enabled for a scope, a rule violation will be raised for any dependencies which are not in the allowed list.
+Both of these take a configuration element for a newline seperated list of dependencies, as `groupId:artifactId` entries, which are allowed in the scopes associated with the rule. The default behaviour is to treat each row as an exact string match. Rows can be prefixed with `regex:` to interpret them as a regular expression. For example, `regex:org.\\junit\\.jupiter:.*` will allow all dependencies with the `groupId` of `org.junit.jupiter`. When a rule in enabled for a scope, a rule violation will be raised for any dependencies which are not in the allowed list.
 
 This plugin does not support:
-* wildcards in dependency names
 * version numbers
 
 
 Example configuration for the `mavenDependencies` parameter:
 ```
-org.eclipse.microprofile:microprofile
+regex:org\.eclipse\.microprofile:.*
 com.github.javafaker:javafaker
 ```
