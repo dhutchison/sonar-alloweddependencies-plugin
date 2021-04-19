@@ -78,6 +78,6 @@ This plugin does not support:
 
 Example configuration for the `mavenDependencies` parameter:
 ```
-regex:org\\.eclipse\\.microprofile:.*
+regex:org\.eclipse\.microprofile:.*
 com.github.javafaker:javafaker
 ```
