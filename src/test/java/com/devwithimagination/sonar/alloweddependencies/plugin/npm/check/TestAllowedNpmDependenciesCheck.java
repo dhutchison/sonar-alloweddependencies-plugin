@@ -155,6 +155,11 @@ class TestAllowedNpmDependenciesCheck {
                     "@angular/language-service",
                     "@cypress/code-coverage")),
             Arguments.of(
+                NpmRulesDefinition.RULE_NPM_ALLOWED_DEV,
+                String.join("\n",
+                    "regex:@angular/.*",
+                    "@cypress/code-coverage")),
+            Arguments.of(
                 NpmRulesDefinition.RULE_NPM_ALLOWED,
                 String.join("\n",
                     "primeicons",
@@ -177,6 +182,10 @@ class TestAllowedNpmDependenciesCheck {
                 NpmRulesDefinition.RULE_NPM_ALLOWED_DEV,
                 "@cypress/code-coverage",
                 3 ),
+            Arguments.of(
+                NpmRulesDefinition.RULE_NPM_ALLOWED_DEV,
+                "regex:@angular/.*",
+                1),
             Arguments.of(
                 NpmRulesDefinition.RULE_NPM_ALLOWED_DEV,
                 null,
