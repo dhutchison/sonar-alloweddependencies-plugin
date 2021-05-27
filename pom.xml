@@ -66,7 +66,7 @@
             <groupId>org.sonarsource.sonarqube</groupId>
             <artifactId>sonar-plugin-api</artifactId>
             <!-- minimal version of SonarQube to support. -->
-            <version>7.9.5</version>
+            <version>7.9.3</version>
             <!-- mandatory scope -->
             <scope>provided</scope>
         </dependency>
