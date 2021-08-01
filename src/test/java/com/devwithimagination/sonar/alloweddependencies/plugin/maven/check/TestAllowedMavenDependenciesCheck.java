@@ -17,7 +17,6 @@ import com.devwithimagination.sonar.alloweddependencies.plugin.maven.checks.Allo
 import com.devwithimagination.sonar.alloweddependencies.plugin.maven.checks.AllowedMavenDependenciesCheckConfig;
 import com.devwithimagination.sonar.alloweddependencies.plugin.maven.rules.MavenRulesDefinition;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -48,12 +47,11 @@ class TestAllowedMavenDependenciesCheck {
      * Setup any configuration between tests.
      * @throws IOException
      */
-    @BeforeEach
-    void setup() throws IOException {
+    private void setup(final String filename) throws IOException {
 
         /* Setup the test project location */
         final File moduleBaseDir = new File("src/test/resources/maven");
-        final File testFile = new File(moduleBaseDir, "pom.xml");
+        final File testFile = new File(moduleBaseDir, filename);
         final String fileContents = String.join(System.lineSeparator(), Files.readAllLines(testFile.toPath()));
 
         final InputFile testInputFile = TestInputFileBuilder.create(
@@ -77,11 +75,14 @@ class TestAllowedMavenDependenciesCheck {
      * Creates tests for the dev and regular dependencies with all the appropriate test file
      * dependencies configured, to ensure we get no issues raised.
      *
+     * @param fileName the name of the file to scan
      * @param rule the rule being tested.
      */
     @ParameterizedTest
     @MethodSource("provideNoViolationParameters")
-    void checkForNoViolations(final ActiveRule rule) {
+    void checkForNoViolations(final String fileName, final ActiveRule rule) throws IOException {
+
+        setup(fileName);
 
         /* Scan our test file, and confirm no issues were raised */
         final AllowedMavenDependenciesCheckConfig config = new AllowedMavenDependenciesCheckConfig(rule);
@@ -101,7 +102,9 @@ class TestAllowedMavenDependenciesCheck {
      */
     @ParameterizedTest
     @MethodSource("provideViolationParameters")
-    void checkForViolations(final ActiveRule rule, final int expectedIssues) {
+    void checkForViolations(final String filename, final ActiveRule rule, final int expectedIssues) throws IOException {
+
+        setup(filename);
 
         /* Scan our test file, and confirm the right number of issues were raised */
         final AllowedMavenDependenciesCheckConfig config = new AllowedMavenDependenciesCheckConfig(rule);
@@ -120,10 +123,12 @@ class TestAllowedMavenDependenciesCheck {
 
         return Stream.of(
             Arguments.of(
+                "pom.xml",
                 createTemplatedTestRule(RuleKey.of(MavenRulesDefinition.REPOSITORY_MAVEN, "my-compile-deps"),
                     "com.github.javafaker:javafaker",
                     "compile")),
             Arguments.of(
+                "pom.xml",
                 createNonTemplatedTestRule(
                     MavenRulesDefinition.RULE_MAVEN_ALLOWED_TEST,
                     String.join("\n",
@@ -136,7 +141,18 @@ class TestAllowedMavenDependenciesCheck {
                         "org.eclipse.microprofile.rest.client:microprofile-rest-client-api",
                         "com.opentable.components:otj-pg-embedded",
                         "org.flywaydb:flyway-core",
-                        "org.jacoco:org.jacoco.agent")))
+                        "org.jacoco:org.jacoco.agent"))),
+            Arguments.of(
+                /* If this scanned against the regular pom.xml file it would fail,
+                 * but for this test we include a file which will not pass the name
+                 * check so should be ignored.
+                 */
+                "not-pom.xml",
+                createNonTemplatedTestRule(
+                    MavenRulesDefinition.RULE_MAVEN_ALLOWED_TEST,
+                    String.join("\n",
+                        "junit:junit",
+                        "regex:org\\.junit\\.jupiter:.*")))
         );
 
     }
@@ -149,30 +165,42 @@ class TestAllowedMavenDependenciesCheck {
 
         return Stream.of(
             Arguments.of(
+                "pom.xml",
                 createTemplatedTestRule(RuleKey.of(MavenRulesDefinition.REPOSITORY_MAVEN, "no-compile-deps"),
                     "",
                     "compile"),
                 1),
             Arguments.of(
+                "pom.xml",
                 createTemplatedTestRule(RuleKey.of(MavenRulesDefinition.REPOSITORY_MAVEN, "no-provided-deps"),
                     "",
                     "provided"),
                 2),
             Arguments.of(
+                "pom.xml",
                 createTemplatedTestRule(RuleKey.of(MavenRulesDefinition.REPOSITORY_MAVEN, "no-combined-compile-provided-deps"),
                     "",
                     "compile,provided"),
                 3),
             Arguments.of(
+                "pom.xml",
                 createNonTemplatedTestRule(MavenRulesDefinition.RULE_MAVEN_ALLOWED_MAIN,
                     "javax.cache:cache-api"),
                 2),
             Arguments.of(
+                "pom.xml",
                 createTemplatedTestRule(RuleKey.of(MavenRulesDefinition.REPOSITORY_MAVEN, "one-provided-deps"),
                     "javax.cache:cache-api",
                     "provided"),
                 1),
             Arguments.of(
+                ".flattened-pom.xml",
+                createTemplatedTestRule(RuleKey.of(MavenRulesDefinition.REPOSITORY_MAVEN, "one-provided-deps"),
+                    "javax.cache:cache-api",
+                    "provided"),
+                1),
+            Arguments.of(
+                "pom.xml",
                 createTemplatedTestRule(RuleKey.of(MavenRulesDefinition.REPOSITORY_MAVEN, "some-test-deps"),
                     String.join("\n",
                         "junit:junit",
@@ -184,6 +212,7 @@ class TestAllowedMavenDependenciesCheck {
                 10
             ),
             Arguments.of(
+                "pom.xml",
                 createTemplatedTestRule(RuleKey.of(MavenRulesDefinition.REPOSITORY_MAVEN, "some-test-deps"),
                     String.join("\n",
                         "junit:junit",
@@ -194,6 +223,7 @@ class TestAllowedMavenDependenciesCheck {
                 7
             ),
             Arguments.of(
+                "pom.xml",
                 createNonTemplatedTestRule(MavenRulesDefinition.RULE_MAVEN_ALLOWED_TEST,
                     String.join("\n",
                         "junit:junit",
