@@ -75,13 +75,14 @@ class TestAllowedMavenDependenciesCheck {
      * Creates tests for the dev and regular dependencies with all the appropriate test file
      * dependencies configured, to ensure we get no issues raised.
      *
+     * @param fileName the name of the file to scan
      * @param rule the rule being tested.
      */
     @ParameterizedTest
     @MethodSource("provideNoViolationParameters")
-    void checkForNoViolations(final ActiveRule rule) throws IOException {
+    void checkForNoViolations(final String fileName, final ActiveRule rule) throws IOException {
 
-        setup("pom.xml");
+        setup(fileName);
 
         /* Scan our test file, and confirm no issues were raised */
         final AllowedMavenDependenciesCheckConfig config = new AllowedMavenDependenciesCheckConfig(rule);
@@ -122,10 +123,12 @@ class TestAllowedMavenDependenciesCheck {
 
         return Stream.of(
             Arguments.of(
+                "pom.xml",
                 createTemplatedTestRule(RuleKey.of(MavenRulesDefinition.REPOSITORY_MAVEN, "my-compile-deps"),
                     "com.github.javafaker:javafaker",
                     "compile")),
             Arguments.of(
+                "pom.xml",
                 createNonTemplatedTestRule(
                     MavenRulesDefinition.RULE_MAVEN_ALLOWED_TEST,
                     String.join("\n",
@@ -138,7 +141,18 @@ class TestAllowedMavenDependenciesCheck {
                         "org.eclipse.microprofile.rest.client:microprofile-rest-client-api",
                         "com.opentable.components:otj-pg-embedded",
                         "org.flywaydb:flyway-core",
-                        "org.jacoco:org.jacoco.agent")))
+                        "org.jacoco:org.jacoco.agent"))),
+            Arguments.of(
+                /* If this scanned against the regular pom.xml file it would fail,
+                 * but for this test we include a file which will not pass the name
+                 * check so should be ignored.
+                 */
+                "not-pom.xml",
+                createNonTemplatedTestRule(
+                    MavenRulesDefinition.RULE_MAVEN_ALLOWED_TEST,
+                    String.join("\n",
+                        "junit:junit",
+                        "regex:org\\.junit\\.jupiter:.*")))
         );
 
     }
