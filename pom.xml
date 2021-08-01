@@ -4,7 +4,7 @@
 
     <groupId>com.devwithimagination</groupId>
     <artifactId>sonar-alloweddependencies-plugin</artifactId>
-    <version>0.0.16-SNAPSHOT</version>
+    <version>0.1.6-SNAPSHOT</version>
 
     <licenses>
         <license>

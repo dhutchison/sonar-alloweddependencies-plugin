@@ -1,5 +1,8 @@
 package com.devwithimagination.sonar.alloweddependencies.plugin.maven.checks;
 
+import java.util.Arrays;
+import java.util.List;
+
 import javax.annotation.Nonnull;
 import javax.xml.xpath.XPathExpression;
 
@@ -28,6 +31,11 @@ public class AllowedMavenDependenciesCheck extends SimpleXPathBasedCheck {
      */
     private static final Logger LOG = Loggers.get(AllowedMavenDependenciesCheck.class);
 
+    private static final List<String> ALLOWED_FILE_NAMES = Arrays.asList(
+        "pom.xml",
+        ".flattened-pom.xml"
+    );
+
     /**
      * The XPath Expression used to find maven dependency nodes in a pom file.
      */
@@ -51,10 +59,10 @@ public class AllowedMavenDependenciesCheck extends SimpleXPathBasedCheck {
     }
 
     @Override
-    public void scanFile(XmlFile xmlFile) {
+    public void scanFile(final XmlFile xmlFile) {
 
         /* Only scan pom.xml files */
-        if ("pom.xml".equalsIgnoreCase(xmlFile.getInputFile().filename())) {
+        if (ALLOWED_FILE_NAMES.contains(xmlFile.getInputFile().filename().toLowerCase())) {
 
             /*
              * Iterate through matches for the XPath expression and compare with the list of
