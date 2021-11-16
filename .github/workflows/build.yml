@@ -19,9 +19,11 @@ jobs:
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - name: Set up JDK 11
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v2
         with:
-          java-version: 11
+          distribution: 'temurin'
+          java-version: '11'
+          cache: 'maven'
       - name: Configure Git user
         # If we are doing a "release" run of this workflow,
         # we will be committing back changes to the pom file. This needs an author.
@@ -35,12 +37,6 @@ jobs:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
-      - name: Cache Maven packages
-        uses: actions/cache@v1
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
 
       - name: Set Release Version
         # If we are doing a "release" run of this workflow, update the version numbers
@@ -52,6 +48,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+
+    #   - name: Generate changelog
+    #     id: changelog
+    #     uses: metcalfc/changelog-generator@v0.4.4
+    #     with:
+    #       myToken: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish SNAPSHOT version to GitHub Packages
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -66,34 +68,40 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  create-release:
-    # If we are doing a "release" run of this workflow, create a GitHub release
-    name: Create Release
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Generate changelog
-        id: changelog
-        uses: metcalfc/changelog-generator@v0.4.4
-        with:
-          myToken: ${{ secrets.GITHUB_TOKEN }}
       - name: Create GitHub Release
+        if: github.event_name == 'workflow_dispatch'
         id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.event.inputs.releaseversion }}
-          release_name: ${{ github.event.inputs.releaseversion }}
-          # TODO: Add release notes / changelog
-          body: |
-            Grab the new version!
+        # uses: actions/create-release@v1
+        # env:
+        #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # with:
+        #   tag_name: ${{ github.event.inputs.releaseversion }}
+        #   release_name: ${{ github.event.inputs.releaseversion }}
+        #   # TODO: Add release notes / changelog
+        #   body: |
+        #     Grab the new version!
 
-            ### Things that changed in this release
-            ${{ steps.changelog.outputs.changelog }}
-          draft: false
+        #     ### Things that changed in this release
+        #     ${{ steps.changelog.outputs.changelog }}
+        #   draft: false
+        #   prerelease: false
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
+          files: |
+            target/*.jar
+
+    #   - name: Add Artifact to GitHub Release
+    #     if: github.event_name == 'workflow_dispatch'
+    #     id: add_release_asset
+    #     uses: actions/upload-release-asset@v1
+    #     env:
+    #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #     with:
+    #       upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+    #       asset_path: target/sonar-alloweddependencies-plugin-${{ github.event.inputs.releaseversion }}.jar
+    #       asset_name: sonar-alloweddependencies-plugin-${{ github.event.inputs.releaseversion }}.jar
+    #       asset_content_type: application/zip
+
+
