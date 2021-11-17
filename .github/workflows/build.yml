@@ -67,42 +67,17 @@ jobs:
         run: mvn -B release:perform
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        #   ${{ steps.changelog.outputs.changelog }}
 
       - name: Create GitHub Release
         if: github.event_name == 'workflow_dispatch'
         id: create_release
-        # uses: actions/create-release@v1
-        # env:
-        #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # with:
-        #   tag_name: ${{ github.event.inputs.releaseversion }}
-        #   release_name: ${{ github.event.inputs.releaseversion }}
-        #   # TODO: Add release notes / changelog
-        #   body: |
-        #     Grab the new version!
-
-        #     ### Things that changed in this release
-        #     ${{ steps.changelog.outputs.changelog }}
-        #   draft: false
-        #   prerelease: false
         uses: "marvinpinto/action-automatic-releases@v1.2.1"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
           automatic_release_tag: ${{ github.event.inputs.releaseversion }}
           files: |
-            target/*.jar
-
-    #   - name: Add Artifact to GitHub Release
-    #     if: github.event_name == 'workflow_dispatch'
-    #     id: add_release_asset
-    #     uses: actions/upload-release-asset@v1
-    #     env:
-    #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #     with:
-    #       upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-    #       asset_path: target/sonar-alloweddependencies-plugin-${{ github.event.inputs.releaseversion }}.jar
-    #       asset_name: sonar-alloweddependencies-plugin-${{ github.event.inputs.releaseversion }}.jar
-    #       asset_content_type: application/zip
+            target/*-${{ github.event.inputs.releaseversion }}.jar
 
 
