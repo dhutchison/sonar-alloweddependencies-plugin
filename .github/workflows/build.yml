@@ -85,10 +85,11 @@ jobs:
         #     ${{ steps.changelog.outputs.changelog }}
         #   draft: false
         #   prerelease: false
-        uses: "marvinpinto/action-automatic-releases@latest"
+        uses: "marvinpinto/action-automatic-releases@v1.2.1"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
+          automatic_release_tag: ${{ github.event.inputs.releaseversion }}
           files: |
             target/*.jar
 
