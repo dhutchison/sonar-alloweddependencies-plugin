@@ -41,9 +41,9 @@ public class AllowedNpmDependenciesCheck {
     private final Predicate<String> allowedDependenciesPredicate;
 
     /**
-     * Boolean holding if this check is for development dependencies (true) or not (false).
+     * Enum holding the type of dependencies we are checking.
      */
-    private final boolean devDependencies;
+    private final DependencyBlockType dependencyType;
 
     /**
      * The key for the rule this instance of the check was created for.
@@ -61,11 +61,9 @@ public class AllowedNpmDependenciesCheck {
         this.ruleKey = activeRuleDefinition.ruleKey();
 
         /* Configure the check scope */
-        if (NpmRulesDefinition.RULE_NPM_ALLOWED.equals(activeRuleDefinition.ruleKey())) {
-            devDependencies = false;
-        } else if (NpmRulesDefinition.RULE_NPM_ALLOWED_DEV.equals(activeRuleDefinition.ruleKey())) {
-            devDependencies = true;
-        } else {
+        this.dependencyType = DependencyBlockType.forRuleKey(activeRuleDefinition.ruleKey());
+
+        if (this.dependencyType == null) {
             throw new IllegalArgumentException("Unsupported rule key: " + activeRuleDefinition.ruleKey());
         }
 
@@ -91,13 +89,7 @@ public class AllowedNpmDependenciesCheck {
 
             JsonObject packageJson = jsonReader.readObject();
 
-            final String jsonObjectName;
-            if (devDependencies) {
-                jsonObjectName = "devDependencies";
-            } else {
-                jsonObjectName = "dependencies";
-            }
-
+            final String jsonObjectName = this.dependencyType.getJsonObjectName();
             final JsonObject packageJsonDependencies = packageJson.getJsonObject(jsonObjectName);
             if (packageJsonDependencies != null) {
                 dependencies.addAll(packageJsonDependencies.keySet());
@@ -149,5 +141,48 @@ public class AllowedNpmDependenciesCheck {
                 createIssue(inputFile, dep, sensorContext);
             }
         });
+    }
+
+
+    /**
+     * Enum holding the types of dependency blocks that can exist in a package.json file.
+     */
+    private enum DependencyBlockType {
+
+        DEPENDENCY("dependencies", NpmRulesDefinition.RULE_NPM_ALLOWED),
+        DEV_DEPENDENCY("devDependencies", NpmRulesDefinition.RULE_NPM_ALLOWED_DEV),
+        PEER_DEPENDENCY("peerDependencies", NpmRulesDefinition.RULE_NPM_ALLOWED_PEER)
+
+        ;
+
+        private final String jsonObjectName;
+        private final RuleKey ruleKey;
+
+        private DependencyBlockType(final String jsonObjectName, final RuleKey ruleKey) {
+            this.jsonObjectName = jsonObjectName;
+            this.ruleKey = ruleKey;
+        }
+
+        public String getJsonObjectName() {
+            return jsonObjectName;
+        }
+
+        /**
+         * Get the {@link DependencyBlockType} value for the supplied rule key.
+         * @param ruleKey the rule key to find.
+         * @return the enum value for the rule key, or null if a matching value is not found.
+         */
+        static DependencyBlockType forRuleKey(final RuleKey ruleKey) {
+
+            for (DependencyBlockType value : DependencyBlockType.values()) {
+                if (value.ruleKey.equals(ruleKey)) {
+                    return value;
+                }
+            }
+
+            /* If we exit the loop without returning then there was no match */
+            return null;
+        }
+
     }
 }

@@ -3,6 +3,9 @@ package com.devwithimagination.sonar.alloweddependencies.plugin.npm.rules;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.junit.jupiter.api.Test;
 import org.sonar.api.server.rule.RulesDefinition.Context;
 import org.sonar.api.server.rule.RulesDefinition.Repository;
@@ -38,8 +41,16 @@ class TestNpmRulesDefinition {
 
         assertEquals(NpmRulesDefinition.REPOSITORY_NPM, repository.key());
         assertEquals(NpmRulesDefinition.NPM_DEPENDENCY_LANGUAGE, repository.language());
-        assertEquals(2, repository.rules().size(), "Expected two rules, one for each type of dependency");
-        // TODO: Implement
+        assertEquals(3, repository.rules().size(), "Expected three rules, one for each type of dependency");
+
+        final List<String> ruleKeys = repository.rules()
+            .stream()
+            .map(r -> r.key())
+            .sorted()
+            .collect(Collectors.toList());
+        assertEquals(NpmRulesDefinition.RULE_NPM_ALLOWED_DEV.rule(), ruleKeys.get(0));
+        assertEquals(NpmRulesDefinition.RULE_NPM_ALLOWED.rule(), ruleKeys.get(1));
+        assertEquals(NpmRulesDefinition.RULE_NPM_ALLOWED_PEER.rule(), ruleKeys.get(2));
 
     }
 
