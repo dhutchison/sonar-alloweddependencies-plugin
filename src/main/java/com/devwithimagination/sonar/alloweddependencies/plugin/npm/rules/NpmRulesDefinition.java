@@ -27,9 +27,14 @@ public class NpmRulesDefinition implements RulesDefinition {
     public static final RuleKey RULE_NPM_ALLOWED = RuleKey.of(REPOSITORY_NPM, "allowed-dependencies-main");
 
     /**
-     * The rule key for the NPM allowed dependency check, for regular dependencies.
+     * The rule key for the NPM allowed dependency check, for development dependencies.
      */
     public static final RuleKey RULE_NPM_ALLOWED_DEV = RuleKey.of(REPOSITORY_NPM, "allowed-dependencies-dev");
+
+    /**
+     * The rule key for the NPM allowed dependency check, for perr dependencies.
+     */
+    public static final RuleKey RULE_NPM_ALLOWED_PEER = RuleKey.of(REPOSITORY_NPM, "allowed-dependencies-peer");
 
     /**
      * The setting key for the NPM allowed dependency list.
@@ -50,6 +55,10 @@ public class NpmRulesDefinition implements RulesDefinition {
         createRule(npmRepository, RULE_NPM_ALLOWED_DEV,
             "Allowed Development Dependencies (NPM)",
             "<p>This rule applies to dependencies in the <code>devDependencies</code> block.</p>");
+
+        createRule(npmRepository, RULE_NPM_ALLOWED_PEER,
+            "Allowed Peer Dependencies (NPM)",
+            "<p>This rule applies to dependencies in the <code>peerDependencies</code> block.</p>");
 
         // don't forget to call done() to finalize the definition
         npmRepository.done();
@@ -80,7 +89,7 @@ public class NpmRulesDefinition implements RulesDefinition {
             .setTags("npm", "dependency")
 
             // optional status. Default value is READY.
-            .setStatus(RuleStatus.BETA)
+            .setStatus(RuleStatus.READY)
 
             // default severity when the rule is activated on a Quality profile. Default
             // value is MAJOR.

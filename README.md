@@ -33,11 +33,12 @@ sonar.sources=src,package.json
 
 ### NPM Rules
 
-Two rules are made available in the `JavaScript` language by this plugin:
-* Allowed Development Dependencies (NPM) - `allowed-dependencies-npm:allowed-dependencies-dev`
+Three rules are made available in the `JavaScript` language by this plugin:
 * Allowed Dependencies (NPM) - `allowed-dependencies-npm:allowed-dependencies-main`
+* Allowed Development Dependencies (NPM) - `allowed-dependencies-npm:allowed-dependencies-dev`
+* Allowed Peer Dependencies (NPM) - `allowed-dependencies-npm:allowed-dependencies-peer`
 
-Both of these take a configuration element for a newline seperated list of dependencies which are allowed in a given scope (`devDependencies` and `dependencies` respectively). When a rule in enabled for a scope, a rule violation will be raised for any dependencies which are not in the allowed list.
+All of these take a configuration element for a newline seperated list of dependencies which are allowed in a given scope (`dependencies`, `devDependencies` and `peerDependencies` respectively). When a rule in enabled for a scope, a rule violation will be raised for any dependencies which are not in the allowed list.
 
 This plugin does not support:
 * version numbers

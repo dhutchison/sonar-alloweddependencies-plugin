@@ -166,14 +166,19 @@ class TestAllowedNpmDependenciesCheck {
                     "primeng",
                     "rxjs",
                     "tslib",
-                    "uuid"))
+                    "uuid")),
+            Arguments.of(
+                NpmRulesDefinition.RULE_NPM_ALLOWED_PEER,
+                String.join("\n",
+                    "tea",
+                    "coffee"))
         );
 
     }
 
     /**
      * Method to create the parameters for {@link #checkForViolations()}.
-     * @return Stream containing the argument pairs.
+     * @return Stream containing the arguments.
      */
     private static Stream<Arguments> provideViolationParameters() {
 
@@ -200,7 +205,16 @@ class TestAllowedNpmDependenciesCheck {
                     "primeicons",
                     "tslib",
                     "uuid"),
-                2)
+                2),
+            Arguments.of(
+                NpmRulesDefinition.RULE_NPM_ALLOWED_PEER,
+                "",
+                2),
+            Arguments.of(
+                NpmRulesDefinition.RULE_NPM_ALLOWED_PEER,
+                "tea",
+                1)
+
         );
 
     }
