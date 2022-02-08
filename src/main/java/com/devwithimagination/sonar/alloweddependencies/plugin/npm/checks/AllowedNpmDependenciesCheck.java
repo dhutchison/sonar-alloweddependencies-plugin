@@ -1,5 +1,7 @@
 package com.devwithimagination.sonar.alloweddependencies.plugin.npm.checks;
 
+import static com.devwithimagination.sonar.alloweddependencies.plugin.common.Constants.ISSUE_MESSAGE;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
@@ -117,7 +119,7 @@ public class AllowedNpmDependenciesCheck {
             .at(
                 new DefaultIssueLocation()
                     .on(inputFile)
-                    .message("Dependency " + dependency + " is not on the allowed list"));
+                    .message(String.format(ISSUE_MESSAGE, dependency)));
 
         issue.save();
     }

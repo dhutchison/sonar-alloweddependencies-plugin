@@ -13,6 +13,17 @@
         </license>
     </licenses>
 
+    <issueManagement>
+		<url>https://github.com/dhutchison/sonar-alloweddependencies-plugin/issues</url>
+		<system>GitHub Issues</system>
+	</issueManagement>
+
+    <scm>
+		<url>https://github.com/dhutchison/sonar-alloweddependencies-plugin</url>
+		<connection>scm:git:https://github.com/dhutchison/sonar-alloweddependencies-plugin.git</connection>
+		<developerConnection>scm:git:https://github.com/dhutchison/sonar-alloweddependencies-plugin.git</developerConnection>
+	</scm>
+
     <!-- this is important for sonar-packaging-maven-plugin -->
     <packaging>sonar-plugin</packaging>
 
@@ -30,11 +41,6 @@
             <url>https://maven.pkg.github.com/dhutchison/sonar-alloweddependencies-plugin</url>
         </snapshotRepository>
     </distributionManagement>
-
-    <scm>
-        <developerConnection>scm:git:https://github.com/dhutchison/sonar-alloweddependencies-plugin.git</developerConnection>
-      <tag>v0.1.7</tag>
-  </scm>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

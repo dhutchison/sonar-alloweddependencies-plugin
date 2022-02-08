@@ -1,5 +1,7 @@
 package com.devwithimagination.sonar.alloweddependencies.plugin.maven.checks;
 
+import static com.devwithimagination.sonar.alloweddependencies.plugin.common.Constants.ISSUE_MESSAGE;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -81,7 +83,7 @@ public class AllowedMavenDependenciesCheck extends SimpleXPathBasedCheck {
 
                     LOG.info("Forbidden dependency: {}", listKey);
 
-                    reportIssue(dependency, "Remove this forbidden dependency.");
+                    reportIssue(dependency, String.format(ISSUE_MESSAGE, listKey));
                 }
             });
         }
