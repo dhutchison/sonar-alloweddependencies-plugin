@@ -87,7 +87,7 @@ public class CreateIssuesOnNPMDependenciesSensor implements Sensor {
 
             for (InputFile inputFile : inputFiles) {
 
-                LOG.info("Input file {}", inputFile);
+                LOG.info("NPM Dependency input file {}", inputFile);
 
                 /* Scan using our checks */
                 checks.forEach(check -> check.scanFile(inputFile, context));
