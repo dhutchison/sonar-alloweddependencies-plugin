@@ -1,8 +1,12 @@
 package com.devwithimagination.sonar.alloweddependencies.plugin.npm.sensor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
 
@@ -10,8 +14,7 @@ import com.devwithimagination.sonar.alloweddependencies.plugin.npm.rules.NpmRule
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.sonar.api.batch.fs.internal.DefaultIndexedFile;
-import org.sonar.api.batch.fs.internal.DefaultInputFile;
+import org.sonar.api.batch.fs.internal.TestInputFileBuilder;
 import org.sonar.api.batch.rule.ActiveRules;
 import org.sonar.api.batch.rule.internal.DefaultActiveRules;
 import org.sonar.api.batch.rule.internal.NewActiveRule;
@@ -46,7 +49,7 @@ class TestCreateIssuesOnNPMDependenciesSensor {
      * be tested as part of the direct unit tests.
      */
     @Test
-    void testExecuteWithRulesAndSingleFile() {
+    void testExecuteWithRulesAndSingleFile() throws IOException {
 
         /* Configure the sensor context with the parts we need mocked */
         final List<NewActiveRule> newActiveRules = Arrays.asList(
@@ -64,18 +67,22 @@ class TestCreateIssuesOnNPMDependenciesSensor {
 
         final ActiveRules activeRules = new DefaultActiveRules(newActiveRules);
 
+        final File testResourcesDir = new File("src/test/resources/npm");
+        final File testFile = new File(testResourcesDir, "package.json");
+        final String fileContents = String.join(System.lineSeparator(), Files.readAllLines(testFile.toPath()));
+
         //TODO: Create issue - javadocs on adding files are wrong here
         final SensorContextTester sensorContext = SensorContextTester.create(
             new File("src/test/resources/npm"));
         sensorContext.setActiveRules(activeRules);
         sensorContext.fileSystem().add(
-            new DefaultInputFile(
-                new DefaultIndexedFile(
+            TestInputFileBuilder.create(
                     "my-test-project",
-                    new File("src/test/resources/npm").toPath(),
-                    "package.json",
-                    "java"),
-                null));
+                    testResourcesDir,
+                    testFile)
+                .setCharset(Charset.forName("UTF-8"))
+                .setContents(fileContents)
+                .build());
 
         /* Run the test component */
         sensor.execute(sensorContext);

@@ -2,15 +2,17 @@ package com.devwithimagination.sonar.alloweddependencies.plugin.npm.checks;
 
 import static com.devwithimagination.sonar.alloweddependencies.plugin.common.Constants.ISSUE_MESSAGE;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashSet;
-import java.util.Set;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.function.Predicate;
-
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.devwithimagination.sonar.alloweddependencies.plugin.npm.rules.NpmRulesDefinition;
 import com.devwithimagination.sonar.alloweddependencies.plugin.util.PredicateFactory;
@@ -19,7 +21,6 @@ import org.sonar.api.batch.fs.InputFile;
 import org.sonar.api.batch.rule.ActiveRule;
 import org.sonar.api.batch.sensor.SensorContext;
 import org.sonar.api.batch.sensor.issue.NewIssue;
-import org.sonar.api.batch.sensor.issue.internal.DefaultIssueLocation;
 import org.sonar.api.rule.RuleKey;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
@@ -76,28 +77,63 @@ public class AllowedNpmDependenciesCheck {
     }
 
     /**
+     * Create a list of strings for the lines in the file. Any whitespace is removed.
+     * @param packageJsonFile the file to parse
+     * @return list of strings
+     */
+    List<String> readFileLines(final InputFile packageJsonFile) {
+
+        List<String> lines = new ArrayList<>();
+        try (InputStream in = packageJsonFile.inputStream();
+                InputStreamReader ir = new InputStreamReader(in);
+                BufferedReader r = new BufferedReader(ir)) {
+
+            String line;
+            while ((line=r.readLine()) != null) {
+                lines.add(line.replaceAll("\\s", ""));
+            }
+        } catch (IOException e) {
+            LOG.error("Error reading package.json for lines", e);
+        }
+
+        return lines;
+
+    }
+
+    /**
      * Parse out the dependencies held in the given input file.
      *
      * @param packageJsonFile the input file
      * @return set containing the dependency names. This will always return a
      *         non-null value.
      */
-    private Set<String> parseDependencies(final InputFile packageJsonFile) {
+    Map<String, Integer> parseDependencies(final InputFile packageJsonFile) {
 
-        final Set<String> dependencies = new HashSet<>();
+        final String jsonObjectName = this.dependencyType.getJsonObjectName();
+        final Map<String, Integer> dependencies = new TreeMap<>();
 
-        try (InputStream in = packageJsonFile.inputStream();
-                JsonReader jsonReader = Json.createReader(in)) {
+        /* Read in the file first as a list of strings so we can do line number detection later on */
+        final List<String> lines = readFileLines(packageJsonFile);
 
-            JsonObject packageJson = jsonReader.readObject();
+        /* Find the expected start range for the area we are looking for */
+        int startLine = lines.indexOf("\"" + jsonObjectName + "\":{");
 
-            final String jsonObjectName = this.dependencyType.getJsonObjectName();
-            final JsonObject packageJsonDependencies = packageJson.getJsonObject(jsonObjectName);
-            if (packageJsonDependencies != null) {
-                dependencies.addAll(packageJsonDependencies.keySet());
+        /* Iterate through the lines from this start line, until we hit a closing curly brace, and pick out the dependencies */
+        final Pattern pattern = Pattern.compile("^[\"](.*?)[\"][:](.*)");
+
+        boolean foundClose = false;
+        for (int index = startLine + 1; (index < lines.size() && !foundClose); index++) {
+
+            if (lines.get(index).startsWith("}")){
+                foundClose = true;
+            } else {
+                /* Add another dependency to the map */
+                Matcher m = pattern.matcher(lines.get(index));
+
+                if (m.matches()) {
+                    dependencies.put(m.group(1), index + 1);
+                }
             }
-        } catch (IOException e) {
-            LOG.error("Error reading package.json", e);
         }
 
         return dependencies;
@@ -108,20 +144,22 @@ public class AllowedNpmDependenciesCheck {
      *
      * @param inputFile     the file being scanned
      * @param dependency    the name of the dependency which was found
+     * @param lineNumber    the line number the dependency was found on
      * @param sensorContext the sensor context
      */
-    private void createIssue(final InputFile inputFile, final String dependency, final SensorContext sensorContext) {
+    private void createIssue(final InputFile inputFile, final String dependency, final Integer lineNumber, final SensorContext sensorContext) {
 
         LOG.info("Dependency " + dependency + " is not on the allowed list");
 
-        NewIssue issue = sensorContext.newIssue()
+        NewIssue issue = sensorContext.newIssue();
+        issue
             .forRule(ruleKey)
             .at(
-                new DefaultIssueLocation()
+                issue.newLocation()
                     .on(inputFile)
-                    .message(String.format(ISSUE_MESSAGE, dependency)));
-
-        issue.save();
+                    .at(inputFile.selectLine(lineNumber))
+                    .message(String.format(ISSUE_MESSAGE, dependency)))
+            .save();
     }
 
     /**
@@ -132,15 +170,15 @@ public class AllowedNpmDependenciesCheck {
     public void scanFile(final InputFile inputFile, final SensorContext sensorContext) {
 
         /* Need to read the file and extract the dependencies */
-        final Set<String> dependencies = parseDependencies(inputFile);
+        final Map<String, Integer> dependencies = parseDependencies(inputFile);
 
         /*
          * Iterate through the dependencies and create issues for any not on the allow
          * list
          */
-        dependencies.forEach(dep -> {
-            if (!allowedDependenciesPredicate.test(dep)) {
-                createIssue(inputFile, dep, sensorContext);
+        dependencies.entrySet().forEach(dep -> {
+            if (!allowedDependenciesPredicate.test(dep.getKey())) {
+                createIssue(inputFile, dep.getKey(), dep.getValue(), sensorContext);
             }
         });
     }

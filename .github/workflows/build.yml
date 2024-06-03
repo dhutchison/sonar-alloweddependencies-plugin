@@ -15,14 +15,14 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      - name: Set up JDK 11
-        uses: actions/setup-java@v2
+      - name: Set up Java
+        uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '11'
+          distribution: 'corretto'
+          java-version: '17'
           cache: 'maven'
       - name: Configure Git user
         # If we are doing a "release" run of this workflow,
@@ -32,7 +32,7 @@ jobs:
             git config user.email "actions@github.com"
             git config user.name "GitHub Actions"
       - name: Cache SonarCloud packages
-        uses: actions/cache@v1
+        uses: actions/cache@v4
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
