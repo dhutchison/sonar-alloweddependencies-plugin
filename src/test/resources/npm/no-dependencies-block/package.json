@@ -1,0 +1,17 @@
+{
+  "name": "test-project",
+  "version": "0.0.1",
+  "scripts": {
+  },
+  "private": true,
+  "devDependencies": {
+    "@angular/cli": "^11.0.5",
+    "@angular/compiler-cli": "^11.0.5",
+    "@angular/language-service": "^11.0.5",
+    "@cypress/code-coverage": "^3.8.8"
+  },
+  "peerDependencies": {
+    "tea": "2.x",
+    "coffee": "3.x"
+  }
+}
