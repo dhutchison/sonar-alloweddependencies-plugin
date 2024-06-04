@@ -54,22 +54,24 @@ class TestAllowedNpmDependenciesCheck {
     void setup() throws IOException {
 
         /* Setup the test project location */
-        final File moduleBaseDir = new File("src/test/resources/npm");
-        final File basePath = new File(moduleBaseDir, "package.json");
-        final String fileContents = String.join(System.lineSeparator(), Files.readAllLines(basePath.toPath()));
-
-        this.inputFile = new TestInputFileBuilder(getClass().getName(), moduleBaseDir, basePath)
-            .setCharset(Charset.forName("UTF-8"))
-            .setContents(fileContents)
-            .build();
-
-
+        this.inputFile = createInputFile("src/test/resources/npm");
 
         /* Setup a sensor context spy */
         final SensorStorage sensorStorage = mock(SensorStorage.class);
 
         this.sensorContext = mock(SensorContext.class);
         when(sensorContext.newIssue()).then(i -> new DefaultIssue(null, sensorStorage));
+    }
+
+    InputFile createInputFile(final String path) throws IOException {
+        final File moduleBaseDir = new File(path);
+        final File basePath = new File(moduleBaseDir, "package.json");
+        final String fileContents = String.join(System.lineSeparator(), Files.readAllLines(basePath.toPath()));
+
+        return new TestInputFileBuilder(getClass().getName(), moduleBaseDir, basePath)
+            .setCharset(Charset.forName("UTF-8"))
+            .setContents(fileContents)
+            .build();
     }
 
     /**
@@ -102,6 +104,31 @@ class TestAllowedNpmDependenciesCheck {
                     "Expected line number to match for dependency " + expectedEntry.getKey());
         }
 
+    }
+
+    /**
+     * Test case that verifies the parseDependencies method returns the expected
+     * result when one of the blocks is empty
+     *
+     */
+    @Test
+    void testParseDependenciesEmptyBlock() throws IOException {
+
+        /* Configure our rule with configuration */
+        final ActiveRule rule = createTestRule(NpmRulesDefinition.RULE_NPM_ALLOWED, "");
+
+        /* Load the input file that has an empty block */
+        final InputFile emptyBlockInputFile = createInputFile("src/test/resources/npm/no-dependencies-block");
+
+        /*
+         * Parse our test file, and check the right dependencies and line numbers were
+         * returned
+         */
+        final AllowedNpmDependenciesCheck check = new AllowedNpmDependenciesCheck(rule);
+        Map<String, Integer> actualResult = check.parseDependencies(emptyBlockInputFile);
+
+        /* Compare against the expected results */
+        assertEquals(0, actualResult.size(), "Expected results to have the same size");
     }
 
     /**

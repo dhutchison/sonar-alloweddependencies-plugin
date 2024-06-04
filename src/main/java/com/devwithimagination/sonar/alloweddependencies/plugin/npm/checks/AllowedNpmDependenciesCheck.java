@@ -118,20 +118,24 @@ public class AllowedNpmDependenciesCheck {
         /* Find the expected start range for the area we are looking for */
         int startLine = lines.indexOf("\"" + jsonObjectName + "\":{");
 
-        /* Iterate through the lines from this start line, until we hit a closing curly brace, and pick out the dependencies */
-        final Pattern pattern = Pattern.compile("^[\"](.*?)[\"][:](.*)");
+        if (startLine >= 0) {
+            /* If the JSON document contains the field we are looking for */
 
-        boolean foundClose = false;
-        for (int index = startLine + 1; (index < lines.size() && !foundClose); index++) {
+            /* Iterate through the lines from this start line, until we hit a closing curly brace, and pick out the dependencies */
+            final Pattern pattern = Pattern.compile("^[\"](.*?)[\"][:](.*)");
 
-            if (lines.get(index).startsWith("}")){
-                foundClose = true;
-            } else {
-                /* Add another dependency to the map */
-                Matcher m = pattern.matcher(lines.get(index));
+            boolean foundClose = false;
+            for (int index = startLine + 1; (index < lines.size() && !foundClose); index++) {
 
-                if (m.matches()) {
-                    dependencies.put(m.group(1), index + 1);
+                if (lines.get(index).startsWith("}")){
+                    foundClose = true;
+                } else {
+                    /* Add another dependency to the map */
+                    Matcher m = pattern.matcher(lines.get(index));
+
+                    if (m.matches()) {
+                        dependencies.put(m.group(1), index + 1);
+                    }
                 }
             }
         }

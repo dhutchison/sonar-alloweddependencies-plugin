@@ -32,7 +32,7 @@ public class NpmRulesDefinition implements RulesDefinition {
     public static final RuleKey RULE_NPM_ALLOWED_DEV = RuleKey.of(REPOSITORY_NPM, "allowed-dependencies-dev");
 
     /**
-     * The rule key for the NPM allowed dependency check, for perr dependencies.
+     * The rule key for the NPM allowed dependency check, for peer dependencies.
      */
     public static final RuleKey RULE_NPM_ALLOWED_PEER = RuleKey.of(REPOSITORY_NPM, "allowed-dependencies-peer");
 
