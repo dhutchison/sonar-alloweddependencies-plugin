@@ -76,6 +76,28 @@ class TestCreateIssuesOnMavenDependenciesSensor {
                 .setContents(fileContents)
                 .build());
 
+        final File ignoredFile = new File(testResourcesDir, "not-pom.xml");
+        final String ignoredFileContents = String.join(System.lineSeparator(), Files.readAllLines(ignoredFile.toPath()));
+        sensorContext.fileSystem().add(
+            TestInputFileBuilder.create(
+                    "my-test-project",
+                    testResourcesDir,
+                    ignoredFile)
+                .setCharset(Charset.forName("UTF-8"))
+                .setContents(ignoredFileContents)
+                .build());
+
+        final File invalidFile = new File(testResourcesDir, "invalid/pom.xml");
+        final String invalidFileContents = String.join(System.lineSeparator(), Files.readAllLines(invalidFile.toPath()));
+        sensorContext.fileSystem().add(
+            TestInputFileBuilder.create(
+                    "my-test-project",
+                    testResourcesDir,
+                    invalidFile)
+                .setCharset(Charset.forName("UTF-8"))
+                .setContents(invalidFileContents)
+                .build());
+
         /* Run the test component */
         sensor.execute(sensorContext);
 

@@ -8,8 +8,8 @@ import java.util.List;
 import javax.annotation.Nonnull;
 import javax.xml.xpath.XPathExpression;
 
-import org.sonar.api.utils.log.Logger;
-import org.sonar.api.utils.log.Loggers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.sonarsource.analyzer.commons.xml.XmlFile;
 import org.sonarsource.analyzer.commons.xml.checks.SimpleXPathBasedCheck;
 import org.w3c.dom.Element;
@@ -31,7 +31,7 @@ public class AllowedMavenDependenciesCheck extends SimpleXPathBasedCheck {
     /**
      * Logger
      */
-    private static final Logger LOG = Loggers.get(AllowedMavenDependenciesCheck.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AllowedMavenDependenciesCheck.class);
 
     private static final List<String> ALLOWED_FILE_NAMES = Arrays.asList(
         "pom.xml",

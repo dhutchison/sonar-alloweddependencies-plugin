@@ -22,7 +22,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'corretto'
-          java-version: '17'
+          java-version: '21'
           cache: 'maven'
       - name: Configure Git user
         # If we are doing a "release" run of this workflow,
@@ -79,5 +79,4 @@ jobs:
           automatic_release_tag: ${{ github.event.inputs.releaseversion }}
           files: |
             target/*-${{ github.event.inputs.releaseversion }}.jar
-
 

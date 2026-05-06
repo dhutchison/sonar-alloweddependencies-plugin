@@ -58,6 +58,9 @@ class TestCreateIssuesOnNPMDependenciesSensor {
             new NewActiveRule.Builder()
                 .setRuleKey(NpmRulesDefinition.RULE_NPM_ALLOWED_DEV)
                 .build(),
+            new NewActiveRule.Builder()
+                .setRuleKey(NpmRulesDefinition.RULE_NPM_ALLOWED_PEER)
+                .build(),
             /* A rule we don't support, that should be filtered out and not constructed into a check */
             new NewActiveRule.Builder()
                 .setRuleKey(RuleKey.of(NpmRulesDefinition.REPOSITORY_NPM, "my-fake-rule"))
@@ -87,7 +90,7 @@ class TestCreateIssuesOnNPMDependenciesSensor {
         sensor.execute(sensorContext);
 
         /* Verify things happened */
-        assertEquals(9, sensorContext.allIssues().size(), "Expecting violations for all dependencies");
+        assertEquals(11, sensorContext.allIssues().size(), "Expecting violations for all dependencies");
 
     }
 

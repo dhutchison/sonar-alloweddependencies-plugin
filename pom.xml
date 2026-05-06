@@ -4,7 +4,7 @@
 
     <groupId>com.devwithimagination</groupId>
     <artifactId>sonar-alloweddependencies-plugin</artifactId>
-    <version>0.1.14-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
 
     <licenses>
         <license>
@@ -45,7 +45,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>8</java.version>
+        <java.version>11</java.version>
+        <sonar.plugin.api.version>13.5.0.4319</sonar.plugin.api.version>
 
         <sonar.sources>src/main/java,pom.xml</sonar.sources>
         <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco-ut/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
@@ -68,14 +69,27 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- Core Sonarqube plugin API -->
+        <!-- Core SonarQube plugin API -->
         <dependency>
-            <groupId>org.sonarsource.sonarqube</groupId>
+            <groupId>org.sonarsource.api.plugin</groupId>
             <artifactId>sonar-plugin-api</artifactId>
-            <!-- minimal version of SonarQube to support. -->
-            <version>7.9.3</version>
+            <version>${sonar.plugin.api.version}</version>
             <!-- mandatory scope -->
             <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.sonarsource.api.plugin</groupId>
+            <artifactId>sonar-plugin-api-test-fixtures</artifactId>
+            <version>${sonar.plugin.api.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.sonarsource.sonarqube</groupId>
+            <artifactId>sonar-plugin-api-impl</artifactId>
+            <version>25.11.0.114957</version>
+            <scope>test</scope>
         </dependency>
 
         <!-- Common analyser utilities -->
@@ -122,9 +136,7 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.13.0</version>
                     <configuration>
-                        <source>${java.version}</source>
-                        <target>${java.version}</target>
-                        <!--<release>${java.version}</release>-->
+                        <release>${java.version}</release>
                     </configuration>
                 </plugin>
 
@@ -200,6 +212,15 @@
                 </plugin>
 
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>3.2.5</version>
+                    <configuration>
+                        <argLine>${surefireArgLine}</argLine>
+                    </configuration>
+                </plugin>
+
+                <plugin>
                     <groupId>org.sonarsource.scanner.maven</groupId>
                     <artifactId>sonar-maven-plugin</artifactId>
                     <version>4.0.0.4121</version>
@@ -211,13 +232,12 @@
             <plugin>
                 <groupId>org.sonarsource.sonar-packaging-maven-plugin</groupId>
                 <artifactId>sonar-packaging-maven-plugin</artifactId>
-                <version>1.18.0.372</version>
+                <version>1.25.1.3002</version>
                 <extensions>true</extensions>
                 <configuration>
                     <!-- the entry-point class that extends org.sonar.api.SonarPlugin -->
                     <pluginClass>com.devwithimagination.sonar.alloweddependencies.AllowedDependenciesPlugin</pluginClass>
-
-                    <!-- advanced properties can be set here. See paragraph "Advanced Build Properties". -->
+                    <requiredForLanguages>json,xml</requiredForLanguages>
                 </configuration>
             </plugin>
 
@@ -233,4 +253,26 @@
         </plugins>
 
     </build>
+
+    <profiles>
+        <profile>
+            <id>integration-tests</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 import org.sonar.api.server.rule.RulesDefinition.Context;
+import org.sonar.api.server.rule.RulesDefinition.Param;
 import org.sonar.api.server.rule.RulesDefinition.Repository;
 import org.sonar.api.server.rule.RulesDefinition.Rule;
 
@@ -68,6 +69,17 @@ public class TestMavenRulesDefinition {
         assertTrue(nonTemplateRules.stream().anyMatch(r -> r.key().equals(MavenRulesDefinition.RULE_MAVEN_ALLOWED_TEST.rule())),
                 "Expecting to find test scope rule");
         nonTemplateRules.forEach(r -> assertEquals(1, r.params().size(), "Expecting one parameter"));
+
+        repository.rules().forEach(rule -> {
+            final Param param = rule.param(MavenRulesDefinition.DEPS_PARAM_KEY);
+            assertNotNull(param, "Expected dependency allow-list parameter");
+            assertEquals("Allowed Maven Dependencies", param.name());
+            assertEquals(
+                "Newline separated list of <groupId>:<artifactId> dependency names. Exact matches are case-insensitive. " +
+                "Prefix a row with regex: to allow dependencies matching a regular expression. " +
+                "Blank lines and rows starting with # are ignored.",
+                param.description());
+        });
     }
 
 }

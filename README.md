@@ -16,11 +16,13 @@ This software is licensed under the [MIT License](https://spdx.org/licenses/MIT.
 
 ## Compatibility
 
-This plugin is compatible with SonarQube >= 7.9 LTS.
+This plugin is tested with SonarQube Community Build 26.4. It targets the modern
+SonarQube plugin API and as of 1.0.0 is no longer intended to preserve compatibility with older
+SonarQube versions.
 
 ## Installation
 
-Download the latest (non-snapshot) version of the [package](https://github.com/dhutchison/sonar-alloweddependencies-plugin/packages/675558), then follow the standard SonarQube plugin [Manual Installation steps](https://docs.sonarqube.org/7.9/setup/install-plugin/).
+Download the latest (non-snapshot) version of the [package](https://github.com/dhutchison/sonar-alloweddependencies-plugin/packages/675558), then follow the standard SonarQube plugin manual installation steps for your SonarQube Community Build version.
 
 ## Usage
 
@@ -33,25 +35,22 @@ sonar.sources=src,package.json
 
 ### NPM Rules
 
-Three rules are made available in the `JavaScript` language by this plugin:
+Three rules are made available in the `JSON` language by this plugin:
 * Allowed Dependencies (NPM) - `allowed-dependencies-npm:allowed-dependencies-main`
 * Allowed Development Dependencies (NPM) - `allowed-dependencies-npm:allowed-dependencies-dev`
 * Allowed Peer Dependencies (NPM) - `allowed-dependencies-npm:allowed-dependencies-peer`
 
-All of these take a configuration element for a newline seperated list of dependencies which are allowed in a given scope (`dependencies`, `devDependencies` and `peerDependencies` respectively). When a rule in enabled for a scope, a rule violation will be raised for any dependencies which are not in the allowed list.
+All of these take a configuration element for a newline separated list of dependencies which are allowed in a given scope (`dependencies`, `devDependencies` and `peerDependencies` respectively). When a rule in enabled for a scope, a rule violation will be raised for any dependencies which are not in the allowed list.
 
 This plugin does not support:
 * version numbers
-* identifying the line of the `package.json` file that the violation occured at
 
 Example configuration value for the `npmDependencies` parameter value:
 ```
+# comments and blank lines are ignored
 @angular-devkit/build-angular
-@angular-eslint/builder
-@angular-eslint/eslint-plugin
-@angular-eslint/eslint-plugin-template
-@angular-eslint/schematics
-@angular-eslint/template-parser
+regex:@angular-eslint/.*
+
 @angular/cli
 @angular/compiler-cli
 @angular/language-service
@@ -59,11 +58,11 @@ Example configuration value for the `npmDependencies` parameter value:
 @typescript-eslint/parser
 ```
 
-The default behaviour is to treat each row as an exact string match. Rows can be prefixed with `regex:` to interpret them as a regular expression. For example, `regex:@angular-eslint/.*` will allow all dependencies in the `@angular-eslint` scope.
+The default behaviour is to treat each row as an exact string match. Exact matches are case-insensitive. Rows can be prefixed with `regex:` to interpret them as a regular expression. Blank rows and rows starting with `#` are ignored. For example, `regex:@angular-eslint/.*` will allow all dependencies in the `@angular-eslint` scope.
 
 ### Maven Rules
 
-Three rules are made available in the `Java` language by this plugin. Two of these are regular rules:
+Three rules are made available in the `XML` language by this plugin. Two of these are regular rules:
 * Allowed Dependencies (Test Scope) - `allowed-dependencies-maven:maven-allowed-dependencies-test`
     * Applies to dependencies with a `test` scope only
 * Allowed Dependencies (Main Scopes) - `allowed-dependencies-maven:maven-allowed-dependencies-main`
@@ -71,7 +70,7 @@ Three rules are made available in the `Java` language by this plugin. Two of the
 * Allowed Dependencies (template) - `allowed-dependencies-maven:maven-allowed-dependencies`
     * A template rule which allows custom rules to be created targeting a set list of scopes. This has an extra `mavenScopes` parameter for supplying a comma seperated list of scopes.
 
-Both of these take a configuration element for a newline seperated list of dependencies, as `groupId:artifactId` entries, which are allowed in the scopes associated with the rule. The default behaviour is to treat each row as an exact string match. Rows can be prefixed with `regex:` to interpret them as a regular expression. For example, `regex:org.\\junit\\.jupiter:.*` will allow all dependencies with the `groupId` of `org.junit.jupiter`. When a rule in enabled for a scope, a rule violation will be raised for any dependencies which are not in the allowed list.
+Both of these take a configuration element for a newline separated list of dependencies, as `groupId:artifactId` entries, which are allowed in the scopes associated with the rule. The default behaviour is to treat each row as an exact string match. Exact matches are case-insensitive. Rows can be prefixed with `regex:` to interpret them as a regular expression. Blank rows and rows starting with `#` are ignored. For example, `regex:org.\\junit\\.jupiter:.*` will allow all dependencies with the `groupId` of `org.junit.jupiter`. When a rule in enabled for a scope, a rule violation will be raised for any dependencies which are not in the allowed list.
 
 Where a project uses the [maven-flatten-plugin](https://www.mojohaus.org/flatten-maven-plugin/index.html), this plugin will scan the created `.flattened-pom.xml` file. Note that depending on the `flattenMode` value used this may lose valuable information. This has primarily been tested with `resolveCiFriendliesOnly` which only flattens version number properties.
 
@@ -81,6 +80,33 @@ This plugin does not support:
 
 Example configuration for the `mavenDependencies` parameter:
 ```
+# comments and blank lines are ignored
 regex:org\.eclipse\.microprofile:.*
+
 com.github.javafaker:javafaker
+```
+
+## Upgrading from older versions
+
+Older versions registered the NPM rules under the JavaScript language and the
+Maven rules under the Java language. Current versions register these descriptor
+file rules under JSON and XML respectively. Existing quality profile activations
+must be recreated in the JSON and XML quality profiles after upgrading.
+
+## Development
+
+Run the unit and package verification suite with:
+```
+mvn verify
+```
+
+Run the additional Failsafe packaging checks with:
+```
+mvn verify -Pintegration-tests
+```
+
+After building the plugin jar, a pinned SonarQube Community Build 26.4 instance
+can be started for manual smoke testing with:
+```
+docker compose -f src/it/sonarqube/docker-compose.yaml up
 ```

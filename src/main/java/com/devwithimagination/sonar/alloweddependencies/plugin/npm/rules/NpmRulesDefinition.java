@@ -12,6 +12,11 @@ import org.sonar.api.server.rule.RulesDefinition;
  */
 public class NpmRulesDefinition implements RulesDefinition {
 
+    private static final String ALLOW_LIST_PARAM_DESCRIPTION =
+        "Newline separated list of dependency names. Exact matches are case-insensitive. " +
+        "Prefix a row with regex: to allow dependencies matching a regular expression. " +
+        "Blank lines and rows starting with # are ignored.";
+
     /**
      * The name of the rule repository the NPM rule is registered against.
      */
@@ -19,7 +24,7 @@ public class NpmRulesDefinition implements RulesDefinition {
     /**
      * The language this plugin registers the NPM rule against.
      */
-    public static final String NPM_DEPENDENCY_LANGUAGE = "js";
+    public static final String NPM_DEPENDENCY_LANGUAGE = "json";
 
     /**
      * The rule key for the NPM allowed dependency check, for regular dependencies.
@@ -101,7 +106,7 @@ public class NpmRulesDefinition implements RulesDefinition {
         /* Configure the parameters we want to configure in our rule template */
         npmAllowedRule.createParam(DEPS_PARAM_KEY)
             .setName("Allowed NPM Dependencies")
-            .setDescription("Newline seperated list of dependencies items")
+            .setDescription(ALLOW_LIST_PARAM_DESCRIPTION)
             .setType(RuleParamType.TEXT);
 
     }

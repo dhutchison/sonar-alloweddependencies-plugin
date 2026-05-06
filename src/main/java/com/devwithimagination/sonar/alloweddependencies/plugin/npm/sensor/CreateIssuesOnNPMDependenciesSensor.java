@@ -14,8 +14,8 @@ import org.sonar.api.batch.sensor.SensorContext;
 import org.sonar.api.batch.sensor.SensorDescriptor;
 import org.sonar.api.config.Configuration;
 import org.sonar.api.rule.RuleKey;
-import org.sonar.api.utils.log.Logger;
-import org.sonar.api.utils.log.Loggers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Generates issues on any dependencies in a package.json file which are not in
@@ -25,14 +25,15 @@ import org.sonar.api.utils.log.Loggers;
  */
 public class CreateIssuesOnNPMDependenciesSensor implements Sensor {
 
-    private static final Logger LOG = Loggers.get(CreateIssuesOnNPMDependenciesSensor.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CreateIssuesOnNPMDependenciesSensor.class);
 
     /**
      * The rules this sensor supports.
      */
     private static final List<RuleKey> SUPPORTED_KEYS = Arrays.asList(
             NpmRulesDefinition.RULE_NPM_ALLOWED,
-            NpmRulesDefinition.RULE_NPM_ALLOWED_DEV);
+            NpmRulesDefinition.RULE_NPM_ALLOWED_DEV,
+            NpmRulesDefinition.RULE_NPM_ALLOWED_PEER);
 
     protected final Configuration config;
 
