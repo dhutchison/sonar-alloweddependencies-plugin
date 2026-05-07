@@ -81,6 +81,31 @@ org.junit.jupiter:junit-jupiter-api
 regex:^org\.assertj:.*$
 ```
 
+### Python Profile
+
+Activate:
+
+* `allowed-dependencies-python:python-allowed-dependencies-main`
+* `allowed-dependencies-python:python-allowed-dependencies-dev`
+
+Use this value for the main rule's `pythonDependencies` parameter:
+
+```text
+requests
+fastapi
+urllib3
+```
+
+Use this value for the dev rule's `pythonDependencies` parameter:
+
+```text
+pytest
+ruff
+mypy
+sphinx
+editable-package
+```
+
 ## Run Scans With Docker
 
 Create a local token in SonarQube, then run the scanner from Docker. The
@@ -119,6 +144,22 @@ docker run --rm \
   sonarsource/sonar-scanner-cli:latest \
   -Dsonar.host.url=http://sonarqube:9000 \
   -Dsonar.token=<token>
+
+cd ../python-pyproject
+docker run --rm \
+  --network sonarqube_default \
+  -v "$PWD:/usr/src" \
+  sonarsource/sonar-scanner-cli:latest \
+  -Dsonar.host.url=http://sonarqube:9000 \
+  -Dsonar.token=<token>
+
+cd ../python-pip
+docker run --rm \
+  --network sonarqube_default \
+  -v "$PWD:/usr/src" \
+  sonarsource/sonar-scanner-cli:latest \
+  -Dsonar.host.url=http://sonarqube:9000 \
+  -Dsonar.token=<token>
 ```
 
 If the compose project name changes, the network may not be
@@ -140,3 +181,5 @@ Expected plugin issues:
 * `maven-pom`: `com.external:runtime-lib` and `org.mockito:mockito-core` should be reported.
 * `maven-flattened-pom`: `com.external:flattened-lib` and `org.hamcrest:hamcrest` should be reported.
 * `xml-non-pom`: no allowed-dependencies plugin issues should be reported.
+* `python-pyproject`: `external-main`, `external-poetry`, `external-dev`, `external-pep735-dev`, and `external-lint` should be reported.
+* `python-pip`: `external-main`, `external-shared`, `external-dev`, and `external-dev-shared` should be reported. The dev rule should not report dependencies reached through `-r requirements.txt`.

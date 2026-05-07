@@ -30,7 +30,7 @@ class PluginManifestIT {
 
             assertEquals("com.devwithimagination.sonar.alloweddependencies.AllowedDependenciesPlugin",
                 attributes.getValue("Plugin-Class"));
-            assertEquals("json,xml", attributes.getValue("Plugin-RequiredForLanguages"));
+            assertEquals("json,xml,py", attributes.getValue("Plugin-RequiredForLanguages"));
             assertTrue(attributes.getValue("Sonar-Version").startsWith("13.5.0."),
                 "Expected the manifest to declare the modern Sonar plugin API minimum version");
         }
