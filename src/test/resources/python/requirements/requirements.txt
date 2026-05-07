@@ -1,0 +1,7 @@
+requests==2.32.0
+urllib3[secure]>=2 ; python_version >= "3.11"
+package @ https://example.com/package-1.0.0.tar.gz
+-r shared.txt
+--constraint constraints.txt
+--index-url https://example.com/simple
+

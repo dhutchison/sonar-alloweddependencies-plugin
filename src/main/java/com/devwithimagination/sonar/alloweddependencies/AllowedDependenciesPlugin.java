@@ -5,6 +5,8 @@ import com.devwithimagination.sonar.alloweddependencies.plugin.maven.rules.Maven
 import com.devwithimagination.sonar.alloweddependencies.plugin.maven.sensors.CreateIssuesOnMavenDependenciesSensor;
 import com.devwithimagination.sonar.alloweddependencies.plugin.npm.rules.NpmRulesDefinition;
 import com.devwithimagination.sonar.alloweddependencies.plugin.npm.sensor.CreateIssuesOnNPMDependenciesSensor;
+import com.devwithimagination.sonar.alloweddependencies.plugin.python.rules.PythonRulesDefinition;
+import com.devwithimagination.sonar.alloweddependencies.plugin.python.sensors.CreateIssuesOnPythonDependenciesSensor;
 
 import org.sonar.api.Plugin;
 
@@ -21,9 +23,11 @@ public class AllowedDependenciesPlugin implements Plugin {
         // Dependency rules
         MavenRulesDefinition.class,
         NpmRulesDefinition.class,
+        PythonRulesDefinition.class,
         // Sensors for the checks
         CreateIssuesOnMavenDependenciesSensor.class,
-        CreateIssuesOnNPMDependenciesSensor.class
+        CreateIssuesOnNPMDependenciesSensor.class,
+        CreateIssuesOnPythonDependenciesSensor.class
         );
 
   }

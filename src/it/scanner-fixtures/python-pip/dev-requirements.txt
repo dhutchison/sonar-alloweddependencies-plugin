@@ -1,0 +1,3 @@
+ruff==0.6.0
+--requirement dev-shared.txt
+

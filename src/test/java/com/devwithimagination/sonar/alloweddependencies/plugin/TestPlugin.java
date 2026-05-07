@@ -54,7 +54,7 @@ class TestPlugin {
         plugin.define(context);
 
         /* Check the registered extensions & count */
-        assertEquals(4, context.getExtensions().size(), "Expected 4 extensions to be registered");
+        assertEquals(6, context.getExtensions().size(), "Expected 6 extensions to be registered");
         for (Object obj : context.getExtensions()) {
 
             if (obj instanceof Class) {
@@ -69,8 +69,8 @@ class TestPlugin {
             }
         }
 
-        assertEquals(2, sensorCount, "Expected 2 sensor definitions");
-        assertEquals(2, ruleDefinitionCount, "Expected 2 rule definitions");
+        assertEquals(3, sensorCount, "Expected 3 sensor definitions");
+        assertEquals(3, ruleDefinitionCount, "Expected 3 rule definitions");
 
     }
 

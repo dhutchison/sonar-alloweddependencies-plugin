@@ -1,0 +1,3 @@
+urllib3>=2
+external-shared==1.0.0
+

@@ -1,0 +1,40 @@
+[project]
+dependencies = [
+    "Requests>=2",
+    "urllib3[secure] ; python_version >= '3.11'",
+    "external-main==1.0.0",
+]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+FastAPI = "^0.115.0"
+external-poetry = "^1.0.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^8.0.0"
+legacy-dev = "^1.0.0"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.6.0"
+modern-dev = "^1.0.0"
+
+[tool.poetry.group.docs.dependencies]
+sphinx = "^7.0.0"
+mkdocs-material = "^9.0.0"
+
+[dependency-groups]
+dev = [
+    "mypy==1.0.0",
+    {include-group = "lint"},
+    "pep735-dev-extra>=1",
+]
+lint = [
+    "flake8",
+    "pep735_lint_extra",
+]
+docs = [
+    "sphinx",
+    {include-group = "lint"},
+    "external-docs",
+]
+

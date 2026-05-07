@@ -14,6 +14,8 @@ import com.devwithimagination.sonar.alloweddependencies.plugin.maven.rules.Maven
 import com.devwithimagination.sonar.alloweddependencies.plugin.maven.sensors.CreateIssuesOnMavenDependenciesSensor;
 import com.devwithimagination.sonar.alloweddependencies.plugin.npm.rules.NpmRulesDefinition;
 import com.devwithimagination.sonar.alloweddependencies.plugin.npm.sensor.CreateIssuesOnNPMDependenciesSensor;
+import com.devwithimagination.sonar.alloweddependencies.plugin.python.rules.PythonRulesDefinition;
+import com.devwithimagination.sonar.alloweddependencies.plugin.python.sensors.CreateIssuesOnPythonDependenciesSensor;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -103,7 +105,11 @@ class TestCommonSensorBehavior {
             Arguments.of(
                 new CreateIssuesOnMavenDependenciesSensor(null),
                 MavenRulesDefinition.MAVEN_DEPENDENCY_LANGUAGE,
-                MavenRulesDefinition.REPOSITORY_MAVEN)
+                MavenRulesDefinition.REPOSITORY_MAVEN),
+            Arguments.of(
+                new CreateIssuesOnPythonDependenciesSensor(null),
+                PythonRulesDefinition.PYTHON_DEPENDENCY_LANGUAGE,
+                PythonRulesDefinition.REPOSITORY_PYTHON)
         );
 
     }
@@ -116,7 +122,8 @@ class TestCommonSensorBehavior {
 
         return Stream.of(
             Arguments.of(new CreateIssuesOnNPMDependenciesSensor(null)),
-            Arguments.of(new CreateIssuesOnMavenDependenciesSensor(null))
+            Arguments.of(new CreateIssuesOnMavenDependenciesSensor(null)),
+            Arguments.of(new CreateIssuesOnPythonDependenciesSensor(null))
         );
 
     }

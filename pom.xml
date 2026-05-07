@@ -106,6 +106,13 @@
             <version>1.1.4</version>
         </dependency>
 
+        <!-- TOML parser library -->
+        <dependency>
+            <groupId>org.tomlj</groupId>
+            <artifactId>tomlj</artifactId>
+            <version>1.1.1</version>
+        </dependency>
+
 
         <!-- Test components -->
         <dependency>
@@ -237,7 +244,7 @@
                 <configuration>
                     <!-- the entry-point class that extends org.sonar.api.SonarPlugin -->
                     <pluginClass>com.devwithimagination.sonar.alloweddependencies.AllowedDependenciesPlugin</pluginClass>
-                    <requiredForLanguages>json,xml</requiredForLanguages>
+                    <requiredForLanguages>json,xml,py</requiredForLanguages>
                 </configuration>
             </plugin>
 

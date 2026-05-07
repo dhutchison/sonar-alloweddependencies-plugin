@@ -5,6 +5,7 @@ This [SonarQube](http://www.sonarqube.org/) plugin ensures that projects in an o
 This plugin exposes rules for the following dependency descriptor files:
 * NPM `package.json`
 * Maven `pom.xml` / `.flattened-pom.xml`
+* Python `pyproject.toml` and pip requirements files
 
 This plugin does not:
 * Check dependency licencies, [sonarqube-licensecheck](https://github.com/porscheinformatik/sonarqube-licensecheck) does that
@@ -26,7 +27,7 @@ Download the latest (non-snapshot) version of the [package](https://github.com/d
 
 ## Usage
 
-This plugin requires that the files to be scanned (e.g. `pom.xml`, `.flattened-pom.xml` or `package.json`) is included in the sources path which SonarQube is configured to analyse.
+This plugin requires that the files to be scanned (e.g. `pom.xml`, `.flattened-pom.xml`, `package.json`, `pyproject.toml` or `requirements.txt`) is included in the sources path which SonarQube is configured to analyse.
 
 Example in sonar-project.properties
 ```
@@ -84,6 +85,34 @@ Example configuration for the `mavenDependencies` parameter:
 regex:org\.eclipse\.microprofile:.*
 
 com.github.javafaker:javafaker
+```
+
+### Python Rules
+
+Three rules are made available in the `Python` language by this plugin:
+* Allowed Dependencies (Python Main) - `allowed-dependencies-python:python-allowed-dependencies-main`
+    * Applies to `[project].dependencies`, `[tool.poetry.dependencies]` and `requirements.txt`
+* Allowed Development Dependencies (Python) - `allowed-dependencies-python:python-allowed-dependencies-dev`
+    * Applies to `[dependency-groups].dev`, `[tool.poetry.dev-dependencies]`, `[tool.poetry.group.dev.dependencies]`, `requirements-dev.txt` and `dev-requirements.txt`
+* Allowed Dependencies (Python template) - `allowed-dependencies-python:python-allowed-dependencies`
+    * A template rule for custom Poetry groups, PEP 735 dependency groups, or explicit requirements filenames. This has an extra `pythonDependencyGroups` parameter for supplying a comma separated list of groups or files.
+
+These rules take a `pythonDependencies` configuration element containing a newline separated list of allowed Python package names. Python package names are normalized before exact matching, so `requests-extra`, `requests_extra` and `requests.extra` are treated as the same package name. Rows can be prefixed with `regex:` to interpret them as a regular expression. Blank rows and rows starting with `#` are ignored.
+
+The Python rules ignore version numbers and compare only package names. Poetry's `python` interpreter constraint is ignored. Pip requirements includes using `-r`, `--requirement`, `-c` and `--constraint` are followed when the included files are part of the scanned sources. For development requirements, an include of `requirements.txt` is treated as belonging to the main rule and is not reported by the dev rule.
+
+Example configuration for the `pythonDependencies` parameter:
+```
+# comments and blank lines are ignored
+requests
+fastapi
+
+regex:^types-.*
+```
+
+Example `pythonDependencyGroups` value for a template rule:
+```
+docs, lint, requirements-tools.txt
 ```
 
 ## Upgrading from older versions

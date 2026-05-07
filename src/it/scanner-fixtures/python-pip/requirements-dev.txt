@@ -1,0 +1,5 @@
+-r requirements.txt
+pytest==8.0.0
+external-dev==1.0.0
+-e git+https://example.com/repo.git#egg=editable-package
+
