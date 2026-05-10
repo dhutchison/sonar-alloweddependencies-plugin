@@ -105,6 +105,32 @@ Run the additional Failsafe packaging checks with:
 mvn verify -Pintegration-tests
 ```
 
+Install pre-commit hooks with:
+```
+pre-commit install
+```
+
+The pre-commit configuration runs `actionlint` when GitHub Actions workflow files are modified.
+
+## Releasing
+
+Releases are published by manually running the `Build` GitHub Actions workflow.
+
+Before starting a release:
+* Ensure the release changes are merged to `main`
+* Ensure the `main` branch build is passing
+* Choose the Maven release version, without a leading `v`, for example `1.0.0`
+
+To publish a release:
+1. Open the `Build` workflow in GitHub Actions
+2. Select `Run workflow`
+3. Enter the `releaseversion` value, for example `1.0.0`
+4. Run the workflow from the `main` branch
+
+The release job runs `mvn release:prepare`, then `mvn release:perform`. It creates and pushes the Maven release tag as `v<releaseversion>`, publishes the release artifact to GitHub Packages, and creates a GitHub Release with the plugin jar attached.
+
+Snapshot builds are published automatically to GitHub Packages when changes are pushed to `main`.
+
 After building the plugin jar, a pinned SonarQube Community Build 26.4 instance
 can be started for manual smoke testing with:
 ```
