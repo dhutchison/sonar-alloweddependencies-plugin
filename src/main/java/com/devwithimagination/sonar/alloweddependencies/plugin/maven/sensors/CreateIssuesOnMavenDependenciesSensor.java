@@ -1,7 +1,10 @@
 package com.devwithimagination.sonar.alloweddependencies.plugin.maven.sensors;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.devwithimagination.sonar.alloweddependencies.plugin.maven.checks.AllowedMavenDependenciesCheck;
@@ -14,8 +17,9 @@ import org.sonar.api.batch.sensor.Sensor;
 import org.sonar.api.batch.sensor.SensorContext;
 import org.sonar.api.batch.sensor.SensorDescriptor;
 import org.sonar.api.config.Configuration;
-import org.sonar.api.utils.log.Logger;
-import org.sonar.api.utils.log.Loggers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.sonarsource.analyzer.commons.xml.ParseException;
 import org.sonarsource.analyzer.commons.xml.XmlFile;
 
 /**
@@ -26,7 +30,12 @@ import org.sonarsource.analyzer.commons.xml.XmlFile;
  */
 public class CreateIssuesOnMavenDependenciesSensor implements Sensor {
 
-    private static final Logger LOG = Loggers.get(CreateIssuesOnMavenDependenciesSensor.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CreateIssuesOnMavenDependenciesSensor.class);
+
+    private static final List<String> POM_FILE_PATTERNS = Arrays.asList(
+        "**/pom.xml",
+        "**/.flattened-pom.xml"
+    );
 
     protected final Configuration config;
 
@@ -75,10 +84,10 @@ public class CreateIssuesOnMavenDependenciesSensor implements Sensor {
             * This does require pom.xml to be in the scannable sources for the project.
             */
             final FileSystem fs = context.fileSystem();
-            final Iterable<InputFile> inputFiles = fs.inputFiles(fs.predicates().matchesPathPattern("**/*.xml"));
-            for (InputFile file : inputFiles) {
-                LOG.info("Got xml file {}", file);
-            }
+            final Set<InputFile> inputFiles = new LinkedHashSet<>();
+            POM_FILE_PATTERNS.forEach(pattern ->
+                fs.inputFiles(fs.predicates().matchesPathPattern(pattern))
+                    .forEach(inputFiles::add));
 
             for (InputFile inputFile : inputFiles) {
 
@@ -90,12 +99,15 @@ public class CreateIssuesOnMavenDependenciesSensor implements Sensor {
                     xmlFile = XmlFile.create(inputFile);
                 } catch (IOException e) {
                     LOG.debug("Skipped '{}' due to parsing error", inputFile);
-                    return;
+                    continue;
+                } catch (ParseException e) {
+                    LOG.debug("Skipped '{}' due to parsing error", inputFile);
+                    continue;
                 } catch (Exception e) {
                     // Our own XML parsing may have failed somewhere, so logging as warning to
                     // appear in logs
                     LOG.warn(String.format("Unable to analyse file '%s'.", inputFile), e);
-                    return;
+                    continue;
                 }
 
                 /* Scan using our checks */

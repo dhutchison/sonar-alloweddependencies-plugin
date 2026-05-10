@@ -3,9 +3,10 @@ package com.devwithimagination.sonar.alloweddependencies.plugin.util;
 import java.util.Arrays;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
-import org.sonar.api.utils.log.Logger;
-import org.sonar.api.utils.log.Loggers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Class for creating Predicates for matching dependencies against.
@@ -19,7 +20,7 @@ public class PredicateFactory {
     /**
      * Logger
      */
-    private static final Logger LOG = Loggers.get(PredicateFactory.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PredicateFactory.class);
 
     /**
      * Create a predicate that will match any of the dependencies.
@@ -41,6 +42,7 @@ public class PredicateFactory {
             return Arrays.asList(deps.split("\\r?\\n"))
                     .stream()
                     .map(String::trim)
+                    .filter(v -> !v.isEmpty())
                     .filter(v -> !v.startsWith(COMMENT_LINE_PREFIX))
                     .sorted()
                     .map(this::createPredicateForSingleDependencyRow)
@@ -65,7 +67,11 @@ public class PredicateFactory {
              */
             final String pattern = dep.substring(REGEX_PREFIX.length());
 
-            return Pattern.compile(pattern, Pattern.CASE_INSENSITIVE).asPredicate();
+            try {
+                return Pattern.compile(pattern, Pattern.CASE_INSENSITIVE).asPredicate();
+            } catch (PatternSyntaxException e) {
+                throw new IllegalArgumentException("Invalid dependency allow-list regex: " + pattern, e);
+            }
         } else {
             /* Exact string match */
             return dep::equalsIgnoreCase;

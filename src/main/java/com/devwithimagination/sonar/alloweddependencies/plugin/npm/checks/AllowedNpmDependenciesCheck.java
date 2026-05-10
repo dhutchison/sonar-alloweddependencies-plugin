@@ -22,8 +22,8 @@ import org.sonar.api.batch.rule.ActiveRule;
 import org.sonar.api.batch.sensor.SensorContext;
 import org.sonar.api.batch.sensor.issue.NewIssue;
 import org.sonar.api.rule.RuleKey;
-import org.sonar.api.utils.log.Logger;
-import org.sonar.api.utils.log.Loggers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A check which compares declared NPM dependencies against a list of approved
@@ -35,7 +35,7 @@ public class AllowedNpmDependenciesCheck {
     /**
      * Logger
      */
-    private static final Logger LOG = Loggers.get(AllowedNpmDependenciesCheck.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AllowedNpmDependenciesCheck.class);
 
     /**
      * Predicate for matching against the names for dependencies which are

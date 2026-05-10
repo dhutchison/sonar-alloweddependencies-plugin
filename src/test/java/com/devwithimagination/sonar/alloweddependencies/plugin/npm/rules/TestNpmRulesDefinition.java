@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 import org.sonar.api.server.rule.RulesDefinition.Context;
+import org.sonar.api.server.rule.RulesDefinition.Param;
 import org.sonar.api.server.rule.RulesDefinition.Repository;
 
 /**
@@ -51,6 +52,17 @@ class TestNpmRulesDefinition {
         assertEquals(NpmRulesDefinition.RULE_NPM_ALLOWED_DEV.rule(), ruleKeys.get(0));
         assertEquals(NpmRulesDefinition.RULE_NPM_ALLOWED.rule(), ruleKeys.get(1));
         assertEquals(NpmRulesDefinition.RULE_NPM_ALLOWED_PEER.rule(), ruleKeys.get(2));
+
+        repository.rules().forEach(rule -> {
+            final Param param = rule.param(NpmRulesDefinition.DEPS_PARAM_KEY);
+            assertNotNull(param, "Expected dependency allow-list parameter");
+            assertEquals("Allowed NPM Dependencies", param.name());
+            assertEquals(
+                "Newline separated list of dependency names. Exact matches are case-insensitive. " +
+                "Prefix a row with regex: to allow dependencies matching a regular expression. " +
+                "Blank lines and rows starting with # are ignored.",
+                param.description());
+        });
 
     }
 

@@ -10,8 +10,8 @@ import com.devwithimagination.sonar.alloweddependencies.plugin.maven.rules.Maven
 import com.devwithimagination.sonar.alloweddependencies.plugin.util.PredicateFactory;
 
 import org.sonar.api.batch.rule.ActiveRule;
-import org.sonar.api.utils.log.Logger;
-import org.sonar.api.utils.log.Loggers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Object holding the configuration for an
@@ -22,7 +22,7 @@ public class AllowedMavenDependenciesCheckConfig {
     /**
      * Logger
      */
-    private static final Logger LOG = Loggers.get(AllowedMavenDependenciesCheckConfig.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AllowedMavenDependenciesCheckConfig.class);
 
     /**
      * The rule this configuration was created for.

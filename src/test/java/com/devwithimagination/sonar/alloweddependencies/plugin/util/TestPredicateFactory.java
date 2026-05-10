@@ -1,6 +1,7 @@
 package com.devwithimagination.sonar.alloweddependencies.plugin.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -35,6 +36,18 @@ class TestPredicateFactory {
         final boolean matches = predicate.test(testDep);
         assertEquals(expectedMatch, matches);
 
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideInvalidRegexArguments")
+    void testInvalidRegexFailsClearly(final String allowedDeps, final String expectedMessage) {
+
+        final PredicateFactory factory = new PredicateFactory();
+
+        final IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+            () -> factory.createPredicateForDependencyListString(allowedDeps));
+
+        assertEquals(expectedMessage, exception.getMessage());
     }
 
     private static Stream<Arguments> provideTestArguments() {
@@ -86,6 +99,36 @@ class TestPredicateFactory {
                 "a-dep",
                 "a-dep",
                 true
+            ),
+
+            /* Testing blank lines and whitespace */
+            Arguments.of(
+                "\n" +
+                "  a-dep  \n" +
+                "\n",
+                "a-dep",
+                true
+            ),
+            Arguments.of(
+                "\n" +
+                "  # a comment  \n" +
+                "\n",
+                "a-dep",
+                false
+            ),
+            Arguments.of(
+                "  regex:org\\.junit\\..*  ",
+                "org.junit.jupiter:junit-jupiter",
+                true
+            )
+        );
+    }
+
+    private static Stream<Arguments> provideInvalidRegexArguments() {
+        return Stream.of(
+            Arguments.of(
+                "regex:[invalid",
+                "Invalid dependency allow-list regex: [invalid"
             )
         );
     }

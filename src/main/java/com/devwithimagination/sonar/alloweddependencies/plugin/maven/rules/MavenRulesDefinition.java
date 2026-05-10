@@ -12,6 +12,11 @@ import org.sonar.api.server.rule.RulesDefinition;
  */
 public class MavenRulesDefinition implements RulesDefinition {
 
+    private static final String ALLOW_LIST_PARAM_DESCRIPTION =
+        "Newline separated list of <groupId>:<artifactId> dependency names. Exact matches are case-insensitive. " +
+        "Prefix a row with regex: to allow dependencies matching a regular expression. " +
+        "Blank lines and rows starting with # are ignored.";
+
     /**
      * The name of the rule repository the Maven rule is registered against.
      */
@@ -19,7 +24,7 @@ public class MavenRulesDefinition implements RulesDefinition {
     /**
      * The language this plugin registers the Maven rule against.
      */
-    public static final String MAVEN_DEPENDENCY_LANGUAGE = "java";
+    public static final String MAVEN_DEPENDENCY_LANGUAGE = "xml";
 
     /**
      * The rule key for the templated Maven allowed dependency check
@@ -128,7 +133,7 @@ public class MavenRulesDefinition implements RulesDefinition {
 
         /* Configure the parameters we want to configure in our rule template */
         createdRule.createParam(DEPS_PARAM_KEY).setName("Allowed Maven Dependencies")
-                .setDescription("Newline seperated list of <groupId>:<artifactId> items").setType(RuleParamType.TEXT);
+                .setDescription(ALLOW_LIST_PARAM_DESCRIPTION).setType(RuleParamType.TEXT);
 
         return createdRule;
 
