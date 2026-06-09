@@ -9,15 +9,19 @@ import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
 
+import com.devwithimagination.sonar.alloweddependencies.plugin.common.Constants;
 import com.devwithimagination.sonar.alloweddependencies.plugin.python.rules.PythonRulesDefinition;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.sonar.api.batch.fs.InputFile;
 import org.sonar.api.batch.fs.internal.TestInputFileBuilder;
 import org.sonar.api.batch.rule.ActiveRules;
 import org.sonar.api.batch.rule.internal.DefaultActiveRules;
 import org.sonar.api.batch.rule.internal.NewActiveRule;
+import org.sonar.api.batch.sensor.issue.Issue;
 import org.sonar.api.batch.sensor.internal.SensorContextTester;
+import org.sonar.api.rule.RuleKey;
 
 class TestCreateIssuesOnPythonDependenciesSensor {
 
@@ -68,6 +72,35 @@ class TestCreateIssuesOnPythonDependenciesSensor {
         sensor.execute(sensorContext);
 
         assertEquals(10, sensorContext.allIssues().size(), "Expecting Python dependency violations");
+        assertIssue(sensorContext, "constrained-package", PythonRulesDefinition.RULE_PYTHON_ALLOWED_MAIN,
+            "requirements/constraints.txt", 1);
+        assertIssue(sensorContext, "dev_extra", PythonRulesDefinition.RULE_PYTHON_ALLOWED_DEV,
+            "requirements/requirements-dev.txt", 3);
+    }
+
+    @Test
+    void testExecuteWithTemplateRule() throws IOException {
+        final RuleKey customRuleKey =
+            RuleKey.of(PythonRulesDefinition.REPOSITORY_PYTHON, "python-allowed-dependencies-docs");
+        final NewActiveRule customRule = new NewActiveRule.Builder()
+            .setRuleKey(customRuleKey)
+            .setTemplateRuleKey(PythonRulesDefinition.RULE_PYTHON_ALLOWED.rule())
+            .setParam(PythonRulesDefinition.DEPS_PARAM_KEY, String.join("\n",
+                "sphinx",
+                "flake8",
+                "pep735_lint_extra"))
+            .setParam(PythonRulesDefinition.GROUPS_PARAM_KEY, "docs")
+            .build();
+
+        final File baseDir = new File("src/test/resources/python");
+        final SensorContextTester sensorContext = SensorContextTester.create(baseDir);
+        sensorContext.setActiveRules(new DefaultActiveRules(Arrays.asList(customRule)));
+        addInputFile(sensorContext, baseDir, "pyproject/pyproject.toml");
+
+        sensor.execute(sensorContext);
+
+        assertEquals(2, sensorContext.allIssues().size());
+        assertIssue(sensorContext, "external-docs", customRuleKey, "pyproject/pyproject.toml", 37);
     }
 
     private static void addInputFile(final SensorContextTester sensorContext, final File baseDir,
@@ -80,5 +113,19 @@ class TestCreateIssuesOnPythonDependenciesSensor {
                 .setCharset(Charset.forName("UTF-8"))
                 .setContents(fileContents)
                 .build());
+    }
+
+    private static void assertIssue(final SensorContextTester sensorContext, final String dependency,
+            final RuleKey ruleKey, final String relativePath, final int lineNumber) {
+
+        final String message = String.format(Constants.ISSUE_MESSAGE, dependency);
+        final Issue issue = sensorContext.allIssues().stream()
+            .filter(candidate -> message.equals(candidate.primaryLocation().message()))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Missing issue for " + dependency));
+
+        assertEquals(ruleKey, issue.ruleKey());
+        assertEquals(relativePath, ((InputFile) issue.primaryLocation().inputComponent()).relativePath());
+        assertEquals(lineNumber, issue.primaryLocation().textRange().start().line());
     }
 }

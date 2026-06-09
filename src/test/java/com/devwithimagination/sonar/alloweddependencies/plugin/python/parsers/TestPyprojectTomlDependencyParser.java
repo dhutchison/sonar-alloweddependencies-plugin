@@ -28,7 +28,9 @@ class TestPyprojectTomlDependencyParser {
 
         final List<String> names = dependencyNames(dependencies);
         assertEquals(Arrays.asList("FastAPI", "Requests", "external-main", "external-poetry", "urllib3"), names);
-        assertTrue(dependencies.stream().allMatch(dependency -> dependency.getLineNumber() > 0));
+        assertLineNumber(dependencies, "Requests", 2);
+        assertLineNumber(dependencies, "urllib3", 3);
+        assertLineNumber(dependencies, "FastAPI", 10);
     }
 
     @Test
@@ -74,11 +76,42 @@ class TestPyprojectTomlDependencyParser {
         assertTrue(dependencies.isEmpty());
     }
 
+    @Test
+    void stopsPep735IncludeCycles() {
+        final InputFile inputFile = createGeneratedInputFile(
+            "[dependency-groups]\n" +
+            "first = [\n" +
+            "    \"first-package\",\n" +
+            "    {include-group = \"second\"},\n" +
+            "]\n" +
+            "second = [\n" +
+            "    \"second-package\",\n" +
+            "    {include-group = \"first\"},\n" +
+            "]\n");
+
+        final List<DependencyOccurrence> dependencies = new PyprojectTomlDependencyParser()
+            .parse(inputFile, PythonDependencyGroupType.CUSTOM, Arrays.asList("first"));
+
+        assertEquals(Arrays.asList("first-package", "second-package"), dependencyNames(dependencies));
+        assertLineNumber(dependencies, "first-package", 2);
+        assertLineNumber(dependencies, "second-package", 6);
+    }
+
     private static InputFile createInputFile(final String path) throws IOException {
         final File moduleBaseDir = new File(path);
         final File basePath = new File(moduleBaseDir, "pyproject.toml");
         final String fileContents = String.join(System.lineSeparator(), Files.readAllLines(basePath.toPath()));
 
+        return createInputFile(moduleBaseDir, basePath, fileContents);
+    }
+
+    private static InputFile createGeneratedInputFile(final String fileContents) {
+        final File moduleBaseDir = new File("src/test/resources/python/generated");
+        final File basePath = new File(moduleBaseDir, "pyproject.toml");
+        return createInputFile(moduleBaseDir, basePath, fileContents);
+    }
+
+    private static InputFile createInputFile(final File moduleBaseDir, final File basePath, final String fileContents) {
         return new TestInputFileBuilder("python-test-project", moduleBaseDir, basePath)
             .setCharset(Charset.forName("UTF-8"))
             .setContents(fileContents)
@@ -91,5 +124,15 @@ class TestPyprojectTomlDependencyParser {
             .sorted()
             .collect(Collectors.toList());
     }
-}
 
+    private static void assertLineNumber(final List<DependencyOccurrence> dependencies, final String name,
+            final int lineNumber) {
+
+        final DependencyOccurrence occurrence = dependencies.stream()
+            .filter(dependency -> name.equals(dependency.getName()))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Missing dependency " + name));
+
+        assertEquals(lineNumber, occurrence.getLineNumber());
+    }
+}

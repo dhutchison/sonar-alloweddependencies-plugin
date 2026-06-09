@@ -58,7 +58,7 @@ public final class PythonRequirementNameParser {
         return Optional.empty();
     }
 
-    private static String stripInlineComment(final String requirement) {
+    static String stripInlineComment(final String requirement) {
         boolean inSingleQuote = false;
         boolean inDoubleQuote = false;
         for (int index = 0; index < requirement.length(); index++) {
@@ -75,4 +75,3 @@ public final class PythonRequirementNameParser {
         return requirement;
     }
 }
-

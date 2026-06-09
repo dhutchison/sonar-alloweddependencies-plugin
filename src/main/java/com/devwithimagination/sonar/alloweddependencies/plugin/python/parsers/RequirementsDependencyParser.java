@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,7 +30,7 @@ public class RequirementsDependencyParser {
     private static final Logger LOG = LoggerFactory.getLogger(RequirementsDependencyParser.class);
 
     private static final Pattern INCLUDE_PATTERN =
-        Pattern.compile("^(?:-r|--requirement|-c|--constraint)\\s+(.+)$");
+        Pattern.compile("^(?:-r\\s+|-c\\s+|--requirement(?:\\s+|=)|--constraint(?:\\s+|=))(.+)$");
 
     private static final String MAIN_REQUIREMENTS_FILE = "requirements.txt";
 
@@ -114,9 +113,23 @@ public class RequirementsDependencyParser {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputFile.inputStream()))) {
             String line;
             int lineNumber = 0;
+            int logicalLineNumber = 0;
+            final StringBuilder logicalLine = new StringBuilder();
             while ((line = reader.readLine()) != null) {
                 lineNumber++;
-                final String trimmedLine = line.trim();
+                if (logicalLine.length() == 0) {
+                    logicalLineNumber = lineNumber;
+                }
+
+                final boolean continued = hasLineContinuation(line);
+                logicalLine.append(continued ? line.substring(0, line.length() - 1) : line);
+                if (continued) {
+                    continue;
+                }
+
+                final String trimmedLine = PythonRequirementNameParser.stripInlineComment(logicalLine.toString())
+                    .trim();
+                logicalLine.setLength(0);
                 if (trimmedLine.isEmpty() || trimmedLine.startsWith("#")) {
                     continue;
                 }
@@ -141,10 +154,11 @@ public class RequirementsDependencyParser {
                     continue;
                 }
 
-                final Optional<String> dependencyName = PythonRequirementNameParser.parseName(line);
-                if (dependencyName.isPresent()) {
-                    dependencies.add(new DependencyOccurrence(dependencyName.get(), inputFile, lineNumber));
-                }
+                addRequirementDependency(dependencies, inputFile, trimmedLine, logicalLineNumber);
+            }
+
+            if (logicalLine.length() > 0) {
+                addRequirementDependency(dependencies, inputFile, logicalLine.toString(), logicalLineNumber);
             }
         } catch (IOException e) {
             LOG.warn("Unable to read requirements file '{}'.", inputFile, e);
@@ -163,6 +177,23 @@ public class RequirementsDependencyParser {
             resolvedPath = parentPath.resolve(includePath).normalize();
         }
         return inputFilesByRelativePath.get(normalizePath(resolvedPath.toString()));
+    }
+
+    private static void addRequirementDependency(final List<DependencyOccurrence> dependencies,
+            final InputFile inputFile, final String requirement, final int lineNumber) {
+
+        final Optional<String> dependencyName = PythonRequirementNameParser.parseName(requirement);
+        if (dependencyName.isPresent()) {
+            dependencies.add(new DependencyOccurrence(dependencyName.get(), inputFile, lineNumber));
+        }
+    }
+
+    private static boolean hasLineContinuation(final String line) {
+        int trailingBackslashes = 0;
+        for (int index = line.length() - 1; index >= 0 && line.charAt(index) == '\\'; index--) {
+            trailingBackslashes++;
+        }
+        return trailingBackslashes % 2 == 1;
     }
 
     private static String stripQuotes(final String value) {
