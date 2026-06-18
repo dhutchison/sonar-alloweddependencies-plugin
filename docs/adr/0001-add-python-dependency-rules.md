@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
@@ -59,6 +59,20 @@ PEP 735 `{include-group = "..."}` entries and pip `-r` / `--requirement` and
 When a dev requirements file includes `requirements.txt`, that include is
 treated as delegated to the main rule and is not traversed by the dev rule.
 
+## Validation
+
+The implementation includes focused unit coverage for rule definitions,
+configuration, parsers, and sensors, plus an optional SonarQube end-to-end suite
+that provisions quality profiles, scans representative fixtures, and asserts the
+issues returned by SonarQube.
+
+The SonarQube end-to-end suite covers the new Python `pyproject.toml` and pip
+requirements fixtures, and also keeps coverage for the existing NPM, Maven POM,
+Maven `.flattened-pom.xml`, and non-POM XML descriptor behavior. The flattened
+POM fixture documents a scanner requirement discovered during implementation:
+generated `.flattened-pom.xml` files must be listed directly in `sonar.sources`
+to be exposed to the XML/plugin sensors in this harness.
+
 ## Consequences
 
 Positive:
@@ -69,6 +83,8 @@ Positive:
   Python release.
 * Python package normalization avoids surprising mismatches between equivalent
   package spellings.
+* Optional black-box SonarQube validation gives release maintainers a way to
+  test the plugin against scanner and server behavior before deployment.
 
 Tradeoffs:
 
@@ -94,4 +110,3 @@ Tradeoffs:
   validate manually.
 * Avoid following requirements includes. This was rejected because split
   requirements files are common, especially for dev and constraint files.
-
