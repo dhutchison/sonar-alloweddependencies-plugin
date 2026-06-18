@@ -2,9 +2,9 @@ services:
   sonarqube:
     image: sonarqube:26.4.0.121862-community
     ports:
-      - "9000:9000"
+      - "${SONARQUBE_PORT:-9000}:9000"
     volumes:
-      - ../../../target/sonar-alloweddependencies-plugin-1.0.0-SNAPSHOT.jar:/opt/sonarqube/extensions/plugins/sonar-alloweddependencies-plugin-0.1.14-SNAPSHOT.jar:ro
+      - ${SONAR_PLUGIN_JAR:?Set SONAR_PLUGIN_JAR to the built plugin JAR}:/opt/sonarqube/extensions/plugins/sonar-alloweddependencies-plugin.jar:ro
       - sonarqube_data:/opt/sonarqube/data
       - sonarqube_logs:/opt/sonarqube/logs
       - sonarqube_temp:/opt/sonarqube/temp

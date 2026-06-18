@@ -134,6 +134,14 @@ Run the additional Failsafe packaging checks with:
 mvn verify -Pintegration-tests
 ```
 
+An optional black-box test deploys the built plugin to a disposable SonarQube
+container and verifies the NPM, Maven POM, Maven flattened POM, non-POM XML,
+and Python scanner fixtures through the SonarQube Web API:
+
+```bash
+src/it/sonarqube/run-e2e.sh
+```
+
 Install pre-commit hooks with:
 ```
 pre-commit install

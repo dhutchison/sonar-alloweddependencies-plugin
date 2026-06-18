@@ -3,12 +3,37 @@
 These fixtures are small projects for manual validation against a local SonarQube
 Community Build instance running this plugin.
 
+## Automated E2E Suite
+
+The opt-in suite builds the plugin, starts a disposable SonarQube container,
+provisions JSON, XML, and Python quality profiles through the Web API, scans the
+NPM, Maven POM, Maven flattened POM, non-POM XML, and Python fixtures, and
+asserts the exact plugin issues returned by SonarQube:
+
+```bash
+src/it/sonarqube/run-e2e.sh
+```
+
+It requires Maven, Docker Compose, `curl`, and `jq`. The suite removes its
+containers and volumes when it finishes. It prints a fixture-by-fixture result
+table and writes scanner logs, assertion details, and the SonarQube log to
+`target/e2e-reports`, including the console report as `summary.txt`.
+To reuse an already-built plugin JAR while developing the harness:
+
+```bash
+E2E_SKIP_BUILD=true src/it/sonarqube/run-e2e.sh
+```
+
+The same suite can be run manually from the `SonarQube E2E` GitHub Actions
+workflow.
+
 ## Start SonarQube
 
 Build the plugin and start the local SonarQube instance:
 
 ```bash
 mvn verify
+export SONAR_PLUGIN_JAR="$PWD/target/$(mvn help:evaluate -Dexpression=project.build.finalName -q -DforceStdout).jar"
 docker compose -f src/it/sonarqube/docker-compose.yaml up
 ```
 
@@ -19,6 +44,7 @@ after startup:
 
 ```bash
 mvn verify
+export SONAR_PLUGIN_JAR="$PWD/target/$(mvn help:evaluate -Dexpression=project.build.finalName -q -DforceStdout).jar"
 docker compose -f src/it/sonarqube/docker-compose.yaml down
 docker compose -f src/it/sonarqube/docker-compose.yaml up
 ```
@@ -130,12 +156,14 @@ docker run --rm \
   -Dsonar.token=<token>
 
 cd ../maven-flattened-pom
-docker run --rm \
-  --network sonarqube_default \
-  -v "$PWD:/usr/src" \
-  sonarsource/sonar-scanner-cli:latest \
-  -Dsonar.host.url=http://sonarqube:9000 \
-  -Dsonar.token=<token>
+mvn process-resources org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+  -Dsonar.host.url=http://localhost:9000 \
+  -Dsonar.token=<token> \
+  -Dsonar.qualitygate.wait=true
+
+This fixture intentionally sets `sonar.sources=.flattened-pom.xml`. Using
+`sonar.sources=.` with `sonar.inclusions=.flattened-pom.xml` can index the file
+without exposing it to XML sensors.
 
 cd ../xml-non-pom
 docker run --rm \
