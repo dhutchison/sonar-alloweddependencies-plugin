@@ -27,6 +27,10 @@ public class PyprojectTomlDependencyParser {
 
     private static final Logger LOG = LoggerFactory.getLogger(PyprojectTomlDependencyParser.class);
 
+    private static final String DEPENDENCIES = "dependencies";
+
+    private static final String POETRY = "poetry";
+
     public List<DependencyOccurrence> parse(final InputFile inputFile,
             final PythonDependencyGroupType groupType, final List<String> groups) {
 
@@ -48,18 +52,18 @@ public class PyprojectTomlDependencyParser {
         if (PythonDependencyGroupType.MAIN.equals(groupType)) {
             dependencies.addAll(parseProjectDependencies(toml, inputFile));
             dependencies.addAll(parsePoetryDependencyTable(toml, inputFile,
-                Arrays.asList("tool", "poetry", "dependencies")));
+                Arrays.asList("tool", POETRY, DEPENDENCIES)));
         } else if (PythonDependencyGroupType.DEV.equals(groupType)) {
             dependencies.addAll(parsePep735Group(toml, inputFile, "dev", new HashSet<>()));
             dependencies.addAll(parsePoetryDependencyTable(toml, inputFile,
-                Arrays.asList("tool", "poetry", "dev-dependencies")));
+                Arrays.asList("tool", POETRY, "dev-dependencies")));
             dependencies.addAll(parsePoetryDependencyTable(toml, inputFile,
-                Arrays.asList("tool", "poetry", "group", "dev", "dependencies")));
+                Arrays.asList("tool", POETRY, "group", "dev", DEPENDENCIES)));
         } else {
             for (String group : groups) {
                 dependencies.addAll(parsePep735Group(toml, inputFile, group, new HashSet<>()));
                 dependencies.addAll(parsePoetryDependencyTable(toml, inputFile,
-                    Arrays.asList("tool", "poetry", "group", group, "dependencies")));
+                    Arrays.asList("tool", POETRY, "group", group, DEPENDENCIES)));
             }
         }
 
@@ -69,7 +73,7 @@ public class PyprojectTomlDependencyParser {
     private static List<DependencyOccurrence> parseProjectDependencies(final TomlParseResult toml,
             final InputFile inputFile) {
 
-        final Object value = toml.get(Arrays.asList("project", "dependencies"));
+        final Object value = toml.get(Arrays.asList("project", DEPENDENCIES));
         if (!(value instanceof TomlArray)) {
             return new ArrayList<>();
         }
@@ -165,4 +169,3 @@ public class PyprojectTomlDependencyParser {
         return position.line();
     }
 }
-

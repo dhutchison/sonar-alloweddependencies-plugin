@@ -34,7 +34,7 @@ class TestPythonRulesDefinition {
 
         final List<String> ruleKeys = repository.rules()
             .stream()
-            .map(rule -> rule.key())
+            .map(Rule::key)
             .sorted()
             .collect(Collectors.toList());
         assertEquals(PythonRulesDefinition.RULE_PYTHON_ALLOWED.rule(), ruleKeys.get(0));

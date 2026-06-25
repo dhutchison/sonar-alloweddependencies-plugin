@@ -12,8 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.devwithimagination.sonar.alloweddependencies.plugin.common.DependencyOccurrence;
 import com.devwithimagination.sonar.alloweddependencies.plugin.python.checks.PythonDependencyGroupType;
@@ -28,9 +26,6 @@ import org.sonar.api.batch.fs.InputFile;
 public class RequirementsDependencyParser {
 
     private static final Logger LOG = LoggerFactory.getLogger(RequirementsDependencyParser.class);
-
-    private static final Pattern INCLUDE_PATTERN =
-        Pattern.compile("^(?:-r\\s+|-c\\s+|--requirement(?:\\s+|=)|--constraint(?:\\s+|=))(.+)$");
 
     private static final String MAIN_REQUIREMENTS_FILE = "requirements.txt";
 
@@ -123,42 +118,16 @@ public class RequirementsDependencyParser {
 
                 final boolean continued = hasLineContinuation(line);
                 logicalLine.append(continued ? line.substring(0, line.length() - 1) : line);
-                if (continued) {
-                    continue;
+                if (!continued) {
+                    addDependenciesForLogicalLine(dependencies, inputFile, groupType, visitedFiles,
+                        logicalLine.toString(), logicalLineNumber);
+                    logicalLine.setLength(0);
                 }
-
-                final String trimmedLine = PythonRequirementNameParser.stripInlineComment(logicalLine.toString())
-                    .trim();
-                logicalLine.setLength(0);
-                if (trimmedLine.isEmpty() || trimmedLine.startsWith("#")) {
-                    continue;
-                }
-
-                final Matcher includeMatcher = INCLUDE_PATTERN.matcher(trimmedLine);
-                if (includeMatcher.matches()) {
-                    final String includePath = stripQuotes(includeMatcher.group(1).trim());
-                    if (PythonDependencyGroupType.DEV.equals(groupType)
-                            && MAIN_REQUIREMENTS_FILE.equals(Path.of(includePath).getFileName().toString())) {
-                        LOG.debug("Skipping dev requirements include '{}' because it is handled by the main rule.",
-                            includePath);
-                        continue;
-                    }
-
-                    final InputFile includedFile = resolveIncludedFile(inputFile, includePath);
-                    if (includedFile != null) {
-                        dependencies.addAll(parseFile(includedFile, groupType, visitedFiles));
-                    } else {
-                        LOG.warn("Skipped requirements include '{}' from '{}' because it is not indexed.",
-                            includePath, inputFile);
-                    }
-                    continue;
-                }
-
-                addRequirementDependency(dependencies, inputFile, trimmedLine, logicalLineNumber);
             }
 
             if (logicalLine.length() > 0) {
-                addRequirementDependency(dependencies, inputFile, logicalLine.toString(), logicalLineNumber);
+                addDependenciesForLogicalLine(dependencies, inputFile, groupType, visitedFiles,
+                    logicalLine.toString(), logicalLineNumber);
             }
         } catch (IOException e) {
             LOG.warn("Unable to read requirements file '{}'.", inputFile, e);
@@ -166,6 +135,86 @@ public class RequirementsDependencyParser {
 
         visitedFiles.remove(relativePath);
         return dependencies;
+    }
+
+    private void addDependenciesForLogicalLine(final List<DependencyOccurrence> dependencies, final InputFile inputFile,
+            final PythonDependencyGroupType groupType, final Set<String> visitedFiles, final String logicalLine,
+            final int lineNumber) {
+
+        final String trimmedLine = PythonRequirementNameParser.stripInlineComment(logicalLine).trim();
+        if (trimmedLine.isEmpty() || trimmedLine.startsWith("#")) {
+            return;
+        }
+
+        final Optional<String> includePath = parseIncludePath(trimmedLine);
+        if (includePath.isPresent()) {
+            addIncludedFileDependencies(dependencies, inputFile, groupType, visitedFiles, includePath.get());
+            return;
+        }
+
+        addRequirementDependency(dependencies, inputFile, trimmedLine, lineNumber);
+    }
+
+    private void addIncludedFileDependencies(final List<DependencyOccurrence> dependencies,
+            final InputFile inputFile, final PythonDependencyGroupType groupType, final Set<String> visitedFiles,
+            final String includePath) {
+
+        if (PythonDependencyGroupType.DEV.equals(groupType)
+                && MAIN_REQUIREMENTS_FILE.equals(Path.of(includePath).getFileName().toString())) {
+            LOG.debug("Skipping dev requirements include '{}' because it is handled by the main rule.", includePath);
+            return;
+        }
+
+        final InputFile includedFile = resolveIncludedFile(inputFile, includePath);
+        if (includedFile != null) {
+            dependencies.addAll(parseFile(includedFile, groupType, visitedFiles));
+        } else {
+            LOG.warn("Skipped requirements include '{}' from '{}' because it is not indexed.", includePath, inputFile);
+        }
+    }
+
+    private static Optional<String> parseIncludePath(final String line) {
+        final Optional<String> shortOptionPath = parseShortIncludePath(line);
+        if (shortOptionPath.isPresent()) {
+            return shortOptionPath;
+        }
+
+        final Optional<String> requirementPath = parseLongIncludePath(line, "--requirement");
+        if (requirementPath.isPresent()) {
+            return requirementPath;
+        }
+
+        return parseLongIncludePath(line, "--constraint");
+    }
+
+    private static Optional<String> parseShortIncludePath(final String line) {
+        if (line.length() > 2 && ("-r".equals(line.substring(0, 2)) || "-c".equals(line.substring(0, 2)))
+                && Character.isWhitespace(line.charAt(2))) {
+            return Optional.of(stripQuotes(line.substring(3).trim()));
+        }
+        return Optional.empty();
+    }
+
+    private static Optional<String> parseLongIncludePath(final String line, final String optionName) {
+        if (!line.startsWith(optionName) || line.length() == optionName.length()) {
+            return Optional.empty();
+        }
+
+        final char separator = line.charAt(optionName.length());
+        if (separator == '=') {
+            return nonEmptyPath(line.substring(optionName.length() + 1));
+        } else if (Character.isWhitespace(separator)) {
+            return nonEmptyPath(line.substring(optionName.length() + 1));
+        }
+        return Optional.empty();
+    }
+
+    private static Optional<String> nonEmptyPath(final String value) {
+        final String path = stripQuotes(value.trim());
+        if (path.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(path);
     }
 
     private InputFile resolveIncludedFile(final InputFile includingFile, final String includePath) {

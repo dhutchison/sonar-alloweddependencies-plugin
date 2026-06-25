@@ -9,9 +9,6 @@ import java.util.regex.Pattern;
  */
 public final class PythonRequirementNameParser {
 
-    private static final Pattern REQUIREMENT_NAME_PATTERN =
-        Pattern.compile("^\\s*([A-Za-z0-9][A-Za-z0-9._-]*)(?:\\s*\\[.*?\\])?.*$");
-
     private static final Pattern EGG_FRAGMENT_PATTERN =
         Pattern.compile("(?:^|[#&])egg=([A-Za-z0-9][A-Za-z0-9._-]*)");
 
@@ -50,12 +47,28 @@ public final class PythonRequirementNameParser {
             line = line.substring(0, directReferenceIndex).trim();
         }
 
-        final Matcher matcher = REQUIREMENT_NAME_PATTERN.matcher(line);
-        if (matcher.matches()) {
-            return Optional.of(matcher.group(1));
+        return parseLeadingName(line);
+    }
+
+    private static Optional<String> parseLeadingName(final String line) {
+        if (line.isEmpty() || !isNameStart(line.charAt(0))) {
+            return Optional.empty();
         }
 
-        return Optional.empty();
+        int nameEndIndex = 1;
+        while (nameEndIndex < line.length() && isNamePart(line.charAt(nameEndIndex))) {
+            nameEndIndex++;
+        }
+
+        return Optional.of(line.substring(0, nameEndIndex));
+    }
+
+    private static boolean isNameStart(final char value) {
+        return Character.isLetterOrDigit(value);
+    }
+
+    private static boolean isNamePart(final char value) {
+        return Character.isLetterOrDigit(value) || value == '.' || value == '_' || value == '-';
     }
 
     static String stripInlineComment(final String requirement) {

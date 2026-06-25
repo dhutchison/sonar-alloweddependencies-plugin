@@ -78,6 +78,25 @@ class TestRequirementsDependencyParser {
     }
 
     @Test
+    void parsesAllSupportedIncludeForms() {
+        final List<InputFile> inputFiles = Arrays.asList(
+            createInputFile("requirements.txt",
+                "-r shared.txt\n" +
+                "-c constraints.txt\n" +
+                "--requirement nested/requirements-extra.txt\n" +
+                "--constraint='nested/constraints-extra.txt'\n"),
+            createInputFile("shared.txt", "urllib3==2.2.0\n"),
+            createInputFile("constraints.txt", "idna==3.7\n"),
+            createInputFile("nested/requirements-extra.txt", "certifi==2024.7.4\n"),
+            createInputFile("nested/constraints-extra.txt", "charset-normalizer==3.3.2\n"));
+
+        final List<DependencyOccurrence> dependencies = new RequirementsDependencyParser(inputFiles)
+            .parse(PythonDependencyGroupType.MAIN, Arrays.asList("main"));
+
+        assertEquals(Arrays.asList("certifi", "charset-normalizer", "idna", "urllib3"), dependencyNames(dependencies));
+    }
+
+    @Test
     void resolvesNestedRelativeIncludes() {
         final List<InputFile> inputFiles = Arrays.asList(
             createInputFile("config/requirements-tools.txt", "-r ../shared/tools.txt\n"),
