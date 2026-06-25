@@ -103,6 +103,25 @@ class TestCreateIssuesOnPythonDependenciesSensor {
         assertIssue(sensorContext, "external-docs", customRuleKey, "pyproject/pyproject.toml", 37);
     }
 
+    @Test
+    void testExecuteIgnoresUnsupportedRules() throws IOException {
+        final RuleKey unsupportedRuleKey =
+            RuleKey.of(PythonRulesDefinition.REPOSITORY_PYTHON, "unsupported-python-rule");
+        final NewActiveRule unsupportedRule = new NewActiveRule.Builder()
+            .setRuleKey(unsupportedRuleKey)
+            .setParam(PythonRulesDefinition.DEPS_PARAM_KEY, "")
+            .build();
+
+        final File baseDir = new File("src/test/resources/python");
+        final SensorContextTester sensorContext = SensorContextTester.create(baseDir);
+        sensorContext.setActiveRules(new DefaultActiveRules(Arrays.asList(unsupportedRule)));
+        addInputFile(sensorContext, baseDir, "pyproject/pyproject.toml");
+
+        sensor.execute(sensorContext);
+
+        assertEquals(0, sensorContext.allIssues().size());
+    }
+
     private static void addInputFile(final SensorContextTester sensorContext, final File baseDir,
             final String relativePath) throws IOException {
 

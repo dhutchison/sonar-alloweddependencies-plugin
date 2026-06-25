@@ -162,7 +162,7 @@ public class PyprojectTomlDependencyParser {
         }
     }
 
-    private static int lineNumber(final TomlPosition position) {
+    static int lineNumber(final TomlPosition position) {
         if (position == null) {
             return 1;
         }

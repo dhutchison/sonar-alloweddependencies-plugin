@@ -53,6 +53,37 @@ class TestAllowedPythonDependenciesCheckConfig {
     }
 
     @Test
+    void checkTemplateRuleWithoutGroups() {
+        final ActiveRule rule = createTestRule(RuleKey.of(PythonRulesDefinition.REPOSITORY_PYTHON, "custom-rule"),
+            PythonRulesDefinition.RULE_PYTHON_ALLOWED.rule(), "sphinx");
+
+        final AllowedPythonDependenciesCheckConfig config = new AllowedPythonDependenciesCheckConfig(rule);
+
+        assertEquals(PythonDependencyGroupType.CUSTOM, config.getGroupType());
+        assertTrue(config.getGroups().isEmpty());
+    }
+
+    @Test
+    void checkTemplateRuleWithBlankAndEmptyGroups() {
+        final ActiveRule rule = createTestRule(RuleKey.of(PythonRulesDefinition.REPOSITORY_PYTHON, "custom-rule"),
+            PythonRulesDefinition.RULE_PYTHON_ALLOWED.rule(), "sphinx", " docs, , lint ");
+
+        final AllowedPythonDependenciesCheckConfig config = new AllowedPythonDependenciesCheckConfig(rule);
+
+        assertEquals(Arrays.asList("docs", "lint"), config.getGroups());
+    }
+
+    @Test
+    void checkTemplateRuleWithBlankGroupsParameter() {
+        final ActiveRule rule = createTestRule(RuleKey.of(PythonRulesDefinition.REPOSITORY_PYTHON, "custom-rule"),
+            PythonRulesDefinition.RULE_PYTHON_ALLOWED.rule(), "sphinx", "   ");
+
+        final AllowedPythonDependenciesCheckConfig config = new AllowedPythonDependenciesCheckConfig(rule);
+
+        assertTrue(config.getGroups().isEmpty());
+    }
+
+    @Test
     void checkUnsupportedRule() {
         final RuleKey ruleKey = RuleKey.of(PythonRulesDefinition.REPOSITORY_PYTHON, "my-fake-rule");
         final ActiveRule rule = createTestRule(ruleKey, null, "");
@@ -86,4 +117,3 @@ class TestAllowedPythonDependenciesCheckConfig {
         return new DefaultActiveRules(Arrays.asList(builder.build())).find(ruleKey);
     }
 }
-

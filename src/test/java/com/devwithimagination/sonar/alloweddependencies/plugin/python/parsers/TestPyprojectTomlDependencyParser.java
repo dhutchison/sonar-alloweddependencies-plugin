@@ -2,6 +2,8 @@ package com.devwithimagination.sonar.alloweddependencies.plugin.python.parsers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.IOException;
@@ -74,6 +76,70 @@ class TestPyprojectTomlDependencyParser {
                 Arrays.asList("main"));
 
         assertTrue(dependencies.isEmpty());
+    }
+
+    @Test
+    void fallsBackToFirstLineWhenTomlPositionIsMissing() {
+        assertEquals(1, PyprojectTomlDependencyParser.lineNumber(null));
+    }
+
+    @Test
+    void skipsUnreadableTomlWithoutThrowing() throws IOException {
+        final InputFile inputFile = mock(InputFile.class);
+        when(inputFile.inputStream()).thenThrow(new IOException("unreadable"));
+
+        final List<DependencyOccurrence> dependencies = new PyprojectTomlDependencyParser()
+            .parse(inputFile, PythonDependencyGroupType.MAIN, Arrays.asList("main"));
+
+        assertTrue(dependencies.isEmpty());
+    }
+
+    @Test
+    void skipsMissingAndUnsupportedDependencyTables() {
+        final InputFile inputFile = createGeneratedInputFile(
+            "[project]\n" +
+            "dependencies = \"not-an-array\"\n" +
+            "\n" +
+            "[dependency-groups]\n" +
+            "docs = \"not-an-array\"\n");
+
+        final List<DependencyOccurrence> dependencies = new PyprojectTomlDependencyParser()
+            .parse(inputFile, PythonDependencyGroupType.MAIN, Arrays.asList("main"));
+
+        assertTrue(dependencies.isEmpty());
+    }
+
+    @Test
+    void skipsUnsupportedPep735ItemsAndInvalidRequirementStrings() {
+        final InputFile inputFile = createGeneratedInputFile(
+            "[dependency-groups]\n" +
+            "docs = [\n" +
+            "    \"sphinx\",\n" +
+            "    42,\n" +
+            "    \"--index-url https://example.com/simple\",\n" +
+            "    {not-include-group = \"ignored\"},\n" +
+            "]\n");
+
+        final List<DependencyOccurrence> dependencies = new PyprojectTomlDependencyParser()
+            .parse(inputFile, PythonDependencyGroupType.CUSTOM, Arrays.asList("docs", "missing"));
+
+        assertEquals(Arrays.asList("sphinx"), dependencyNames(dependencies));
+    }
+
+    @Test
+    void skipsUnsupportedProjectDependencyArrayItemsAndInvalidRequirements() {
+        final InputFile inputFile = createGeneratedInputFile(
+            "[project]\n" +
+            "dependencies = [\n" +
+            "    \"requests\",\n" +
+            "    42,\n" +
+            "    \"--index-url https://example.com/simple\",\n" +
+            "]\n");
+
+        final List<DependencyOccurrence> dependencies = new PyprojectTomlDependencyParser()
+            .parse(inputFile, PythonDependencyGroupType.MAIN, Arrays.asList("main"));
+
+        assertEquals(Arrays.asList("requests"), dependencyNames(dependencies));
     }
 
     @Test
