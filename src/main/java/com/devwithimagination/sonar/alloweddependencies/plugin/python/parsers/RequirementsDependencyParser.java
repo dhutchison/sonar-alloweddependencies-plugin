@@ -201,9 +201,7 @@ public class RequirementsDependencyParser {
         }
 
         final char separator = line.charAt(optionName.length());
-        if (separator == '=') {
-            return nonEmptyPath(line.substring(optionName.length() + 1));
-        } else if (Character.isWhitespace(separator)) {
+        if (separator == '=' || Character.isWhitespace(separator)) {
             return nonEmptyPath(line.substring(optionName.length() + 1));
         }
         return Optional.empty();
