@@ -57,6 +57,20 @@ class TestRequirementsDependencyParser {
     }
 
     @Test
+    void expandsAliasesInTemplateRequirementGroups() {
+        final List<InputFile> inputFiles = Arrays.asList(
+            createInputFile("requirements.txt", "requests==2.32.0\n"),
+            createInputFile("requirements-dev.txt", "pytest==8.2.0\n"),
+            createInputFile("dev-requirements.txt", "ruff==0.5.0\n"),
+            createInputFile("docs.txt", "sphinx==7.3.7\n"));
+
+        final List<DependencyOccurrence> dependencies = new RequirementsDependencyParser(inputFiles)
+            .parse(PythonDependencyGroupType.CUSTOM, Arrays.asList("main", "dev", "docs.txt"));
+
+        assertEquals(Arrays.asList("pytest", "requests", "ruff", "sphinx"), dependencyNames(dependencies));
+    }
+
+    @Test
     void parsesLogicalLinesAndInlineComments() {
         final List<InputFile> inputFiles = Arrays.asList(
             createInputFile("requirements.txt",
@@ -84,16 +98,52 @@ class TestRequirementsDependencyParser {
                 "-r shared.txt\n" +
                 "-c constraints.txt\n" +
                 "--requirement nested/requirements-extra.txt\n" +
-                "--constraint='nested/constraints-extra.txt'\n"),
+                "--constraint='nested/constraints-extra.txt'\n" +
+                "--requirement=\"nested/requirements-quoted.txt\"\n"),
             createInputFile("shared.txt", "urllib3==2.2.0\n"),
             createInputFile("constraints.txt", "idna==3.7\n"),
             createInputFile("nested/requirements-extra.txt", "certifi==2024.7.4\n"),
-            createInputFile("nested/constraints-extra.txt", "charset-normalizer==3.3.2\n"));
+            createInputFile("nested/constraints-extra.txt", "charset-normalizer==3.3.2\n"),
+            createInputFile("nested/requirements-quoted.txt", "h11==0.14.0\n"));
 
         final List<DependencyOccurrence> dependencies = new RequirementsDependencyParser(inputFiles)
             .parse(PythonDependencyGroupType.MAIN, Arrays.asList("main"));
 
-        assertEquals(Arrays.asList("certifi", "charset-normalizer", "idna", "urllib3"), dependencyNames(dependencies));
+        assertEquals(Arrays.asList("certifi", "charset-normalizer", "h11", "idna", "urllib3"),
+            dependencyNames(dependencies));
+    }
+
+    @Test
+    void ignoresCommentsBlankLinesAndMalformedIncludes() {
+        final List<InputFile> inputFiles = Arrays.asList(
+            createInputFile("requirements.txt",
+                "\n" +
+                "   # comment\n" +
+                "-r   \n" +
+                "-r=shared.txt\n" +
+                "--requirement\n" +
+                "--requirement:\n" +
+                "--constraint=   \n" +
+                "--requirement=\"missing.txt\n" +
+                "--constraint='missing.txt\n" +
+                "requests==2.32.0\n"));
+
+        final List<DependencyOccurrence> dependencies = new RequirementsDependencyParser(inputFiles)
+            .parse(PythonDependencyGroupType.MAIN, Arrays.asList("main"));
+
+        assertEquals(Arrays.asList("requests"), dependencyNames(dependencies));
+    }
+
+    @Test
+    void parsesUnterminatedLineContinuationAtEndOfFile() {
+        final List<InputFile> inputFiles = Arrays.asList(
+            createInputFile("requirements.txt", "requests==2.32.0 \\"));
+
+        final List<DependencyOccurrence> dependencies = new RequirementsDependencyParser(inputFiles)
+            .parse(PythonDependencyGroupType.MAIN, Arrays.asList("main"));
+
+        assertEquals(Arrays.asList("requests"), dependencyNames(dependencies));
+        assertOccurrence(dependencies, "requests", "requirements.txt", 1);
     }
 
     @Test

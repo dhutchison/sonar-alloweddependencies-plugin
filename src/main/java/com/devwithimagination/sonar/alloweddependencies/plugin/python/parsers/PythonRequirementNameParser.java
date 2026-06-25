@@ -22,7 +22,7 @@ public final class PythonRequirementNameParser {
         }
 
         String line = stripInlineComment(requirement).trim();
-        if (line.isEmpty() || line.startsWith("#")) {
+        if (line.isEmpty()) {
             return Optional.empty();
         }
 
@@ -51,7 +51,7 @@ public final class PythonRequirementNameParser {
     }
 
     private static Optional<String> parseLeadingName(final String line) {
-        if (line.isEmpty() || !isNameStart(line.charAt(0))) {
+        if (!isNameStart(line.charAt(0))) {
             return Optional.empty();
         }
 

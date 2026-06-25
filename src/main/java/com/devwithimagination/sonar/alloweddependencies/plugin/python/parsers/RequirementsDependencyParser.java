@@ -142,7 +142,7 @@ public class RequirementsDependencyParser {
             final int lineNumber) {
 
         final String trimmedLine = PythonRequirementNameParser.stripInlineComment(logicalLine).trim();
-        if (trimmedLine.isEmpty() || trimmedLine.startsWith("#")) {
+        if (trimmedLine.isEmpty()) {
             return;
         }
 
@@ -190,7 +190,7 @@ public class RequirementsDependencyParser {
     private static Optional<String> parseShortIncludePath(final String line) {
         if (line.length() > 2 && ("-r".equals(line.substring(0, 2)) || "-c".equals(line.substring(0, 2)))
                 && Character.isWhitespace(line.charAt(2))) {
-            return Optional.of(stripQuotes(line.substring(3).trim()));
+            return nonEmptyPath(line.substring(3));
         }
         return Optional.empty();
     }
