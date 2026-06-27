@@ -142,6 +142,10 @@ and Python scanner fixtures through the SonarQube Web API:
 src/it/sonarqube/run-e2e.sh
 ```
 
+Set `E2E_KEEP_RUNNING=true` to leave SonarQube running after the suite for
+manual visual checks. The script prints the exact `docker compose down` command
+to stop and remove the container and volumes when you are done.
+
 Install pre-commit hooks with:
 ```
 pre-commit install

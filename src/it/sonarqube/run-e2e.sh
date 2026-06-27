@@ -13,6 +13,7 @@ readonly SCANNER_IMAGE="${SCANNER_IMAGE:-sonarsource/sonar-scanner-cli:12.1.0.32
 readonly E2E_DOCKER_CONFIG="${REPOSITORY_ROOT}/target/e2e-docker-config"
 readonly REPORT_DIR="${REPOSITORY_ROOT}/target/e2e-reports"
 readonly WORK_DIR="${REPOSITORY_ROOT}/target/e2e-work"
+readonly ADMIN_USERNAME="admin"
 readonly ADMIN_PASSWORD="AllowedDependencies-E2E-Admin-42!"
 
 SONAR_TOKEN=""
@@ -57,7 +58,14 @@ api() {
 cleanup() {
     local exit_code=$?
     compose logs --no-color sonarqube >"${REPORT_DIR}/sonarqube.log" 2>&1 || true
-    compose down --volumes --remove-orphans >/dev/null 2>&1 || true
+    if [[ ${E2E_KEEP_RUNNING:-false} == "true" ]]; then
+        log "SonarQube has been left running at ${SONARQUBE_URL}"
+        log "Log in with username '${ADMIN_USERNAME}' and password '${ADMIN_PASSWORD}'"
+        log "Stop and remove it with:"
+        log "SONAR_PLUGIN_JAR=\"${SONAR_PLUGIN_JAR}\" SONARQUBE_PORT=\"${SONARQUBE_PORT}\" docker compose --project-name \"${COMPOSE_PROJECT_NAME}\" -f \"${COMPOSE_FILE}\" down --volumes --remove-orphans"
+    else
+        compose down --volumes --remove-orphans >/dev/null 2>&1 || true
+    fi
     rm -rf "${E2E_DOCKER_CONFIG}"
     exit "${exit_code}"
 }
@@ -89,15 +97,15 @@ wait_for_sonarqube() {
 
 create_token() {
     curl --fail-with-body --silent --show-error \
-        --user admin:admin \
+        --user "${ADMIN_USERNAME}:admin" \
         --request POST \
-        --data-urlencode "login=admin" \
+        --data-urlencode "login=${ADMIN_USERNAME}" \
         --data-urlencode "previousPassword=admin" \
         --data-urlencode "password=${ADMIN_PASSWORD}" \
         "${SONARQUBE_URL}/api/users/change_password" >/dev/null
 
     SONAR_TOKEN="$(curl --fail-with-body --silent --show-error \
-        --user "admin:${ADMIN_PASSWORD}" \
+        --user "${ADMIN_USERNAME}:${ADMIN_PASSWORD}" \
         --request POST \
         --data-urlencode "name=allowed-dependencies-e2e-${RANDOM}" \
         "${SONARQUBE_URL}/api/user_tokens/generate" | jq -r '.token')"

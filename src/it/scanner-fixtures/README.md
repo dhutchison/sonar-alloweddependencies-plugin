@@ -24,6 +24,16 @@ To reuse an already-built plugin JAR while developing the harness:
 E2E_SKIP_BUILD=true src/it/sonarqube/run-e2e.sh
 ```
 
+To leave SonarQube running after the suite for manual visual checks:
+
+```bash
+E2E_KEEP_RUNNING=true src/it/sonarqube/run-e2e.sh
+```
+
+When this is enabled, the script prints the exact `docker compose down` command
+to stop and remove the container and volumes when you are done. It also prints
+the local administrator credentials needed to log in to the retained instance.
+
 The same suite can be run manually from the `SonarQube E2E` GitHub Actions
 workflow.
 
