@@ -120,7 +120,7 @@ public class AllowedNpmDependenciesCheck {
             /* If the JSON document contains the field we are looking for */
 
             /* Iterate through the lines from this start line, until we hit a closing curly brace, and pick out the dependencies */
-            final Pattern pattern = Pattern.compile("^[\"](.*?)[\"][:](.*)");
+            final Pattern pattern = Pattern.compile("^\"([^\"]+)\":");
 
             boolean foundClose = false;
             for (int index = startLine + 1; (index < lines.size() && !foundClose); index++) {
@@ -131,7 +131,7 @@ public class AllowedNpmDependenciesCheck {
                     /* Add another dependency to the map */
                     Matcher m = pattern.matcher(lines.get(index));
 
-                    if (m.matches()) {
+                    if (m.find()) {
                         dependencies.put(m.group(1), index + 1);
                     }
                 }
