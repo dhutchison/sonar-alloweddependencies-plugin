@@ -37,6 +37,11 @@ the local administrator credentials needed to log in to the retained instance.
 The same suite can be run manually from the `SonarQube E2E` GitHub Actions
 workflow.
 
+The suite also creates a Python rule from the template, selecting the `docs`
+dependency group and `requirements-template.txt`. Its exact issue assertions
+verify both configured sources and ensure the custom rule does not also scan the
+main or development defaults.
+
 ## Start SonarQube
 
 Build the plugin and start the local SonarQube instance:
@@ -219,5 +224,5 @@ Expected plugin issues:
 * `maven-pom`: `com.external:runtime-lib` and `org.mockito:mockito-core` should be reported.
 * `maven-flattened-pom`: `com.external:flattened-lib` and `org.hamcrest:hamcrest` should be reported.
 * `xml-non-pom`: no allowed-dependencies plugin issues should be reported.
-* `python-pyproject`: `external-main`, `external-poetry`, `external-dev`, `external-pep735-dev`, and `external-lint` should be reported.
-* `python-pip`: `external-main`, `external-shared`, `external-dev`, and `external-dev-shared` should be reported. The dev rule should not report dependencies reached through `-r requirements.txt`.
+* `python-pyproject`: the fixed rules should report `external-main`, `external-poetry`, `external-dev`, `external-pep735-dev`, and `external-lint`; the template-derived docs rule should report `external-docs-poetry`, `external-docs-pep735`, and `external-lint`.
+* `python-pip`: the fixed rules should report `external-main`, `external-shared`, `external-dev`, and `external-dev-shared`; the template-derived rule should report `external-template` from `requirements-template.txt`. The dev rule should not report dependencies reached through `-r requirements.txt`.

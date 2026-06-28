@@ -22,12 +22,11 @@ import org.sonar.api.batch.fs.internal.TestInputFileBuilder;
 class TestRequirementsDependencyParser {
 
     @Test
-    void parsesMainRequirementsWithIncludesAndConstraints() throws IOException {
+    void parsesMainRequirementsWithIncludesAndIgnoresConstraints() throws IOException {
         final List<DependencyOccurrence> dependencies = new RequirementsDependencyParser(createInputFiles())
             .parse(PythonDependencyGroupType.MAIN, Arrays.asList("main"));
 
         assertEquals(Arrays.asList(
-            "constrained-package",
             "cyclic-package",
             "package",
             "requests",
@@ -57,7 +56,7 @@ class TestRequirementsDependencyParser {
     }
 
     @Test
-    void expandsAliasesInTemplateRequirementGroups() {
+    void parsesExplicitTemplateRequirementFiles() {
         final List<InputFile> inputFiles = Arrays.asList(
             createInputFile("requirements.txt", "requests==2.32.0\n"),
             createInputFile("requirements-dev.txt", "pytest==8.2.0\n"),
@@ -65,13 +64,14 @@ class TestRequirementsDependencyParser {
             createInputFile("docs.txt", "sphinx==7.3.7\n"));
 
         final List<DependencyOccurrence> dependencies = new RequirementsDependencyParser(inputFiles)
-            .parse(PythonDependencyGroupType.CUSTOM, Arrays.asList("main", "dev", "docs.txt"));
+            .parse(PythonDependencyGroupType.CUSTOM, Arrays.asList(
+                "requirements.txt", "requirements-dev.txt", "dev-requirements.txt", "docs.txt"));
 
         assertEquals(Arrays.asList("pytest", "requests", "ruff", "sphinx"), dependencyNames(dependencies));
     }
 
     @Test
-    void parsesLogicalLinesAndInlineComments() {
+    void parsesLogicalLinesAndIgnoresConstraints() {
         final List<InputFile> inputFiles = Arrays.asList(
             createInputFile("requirements.txt",
                 "requests==2.32.0 \\\n" +
@@ -85,14 +85,13 @@ class TestRequirementsDependencyParser {
         final List<DependencyOccurrence> dependencies = new RequirementsDependencyParser(inputFiles)
             .parse(PythonDependencyGroupType.MAIN, Arrays.asList("main"));
 
-        assertEquals(Arrays.asList("idna", "requests", "urllib3"), dependencyNames(dependencies));
+        assertEquals(Arrays.asList("requests", "urllib3"), dependencyNames(dependencies));
         assertOccurrence(dependencies, "requests", "requirements.txt", 1);
         assertOccurrence(dependencies, "urllib3", "shared.txt", 1);
-        assertOccurrence(dependencies, "idna", "constraints.txt", 1);
     }
 
     @Test
-    void parsesAllSupportedIncludeForms() {
+    void parsesRequirementIncludeFormsAndIgnoresConstraintForms() {
         final List<InputFile> inputFiles = Arrays.asList(
             createInputFile("requirements.txt",
                 "-r shared.txt\n" +
@@ -109,7 +108,7 @@ class TestRequirementsDependencyParser {
         final List<DependencyOccurrence> dependencies = new RequirementsDependencyParser(inputFiles)
             .parse(PythonDependencyGroupType.MAIN, Arrays.asList("main"));
 
-        assertEquals(Arrays.asList("certifi", "charset-normalizer", "h11", "idna", "urllib3"),
+        assertEquals(Arrays.asList("certifi", "h11", "urllib3"),
             dependencyNames(dependencies));
     }
 

@@ -4,7 +4,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -54,14 +57,16 @@ public class PyprojectTomlDependencyParser {
             dependencies.addAll(parsePoetryDependencyTable(toml, inputFile,
                 Arrays.asList("tool", POETRY, DEPENDENCIES)));
         } else if (PythonDependencyGroupType.DEV.equals(groupType)) {
-            dependencies.addAll(parsePep735Group(toml, inputFile, "dev", new HashSet<>()));
+            final Map<String, String> pep735GroupNames = pep735GroupNames(toml);
+            dependencies.addAll(parsePep735Group(toml, inputFile, "dev", pep735GroupNames, new HashSet<>()));
             dependencies.addAll(parsePoetryDependencyTable(toml, inputFile,
                 Arrays.asList("tool", POETRY, "dev-dependencies")));
             dependencies.addAll(parsePoetryDependencyTable(toml, inputFile,
                 Arrays.asList("tool", POETRY, "group", "dev", DEPENDENCIES)));
         } else {
+            final Map<String, String> pep735GroupNames = pep735GroupNames(toml);
             for (String group : groups) {
-                dependencies.addAll(parsePep735Group(toml, inputFile, group, new HashSet<>()));
+                dependencies.addAll(parsePep735Group(toml, inputFile, group, pep735GroupNames, new HashSet<>()));
                 dependencies.addAll(parsePoetryDependencyTable(toml, inputFile,
                     Arrays.asList("tool", POETRY, "group", group, DEPENDENCIES)));
             }
@@ -107,16 +112,22 @@ public class PyprojectTomlDependencyParser {
     }
 
     private static List<DependencyOccurrence> parsePep735Group(final TomlParseResult toml, final InputFile inputFile,
-            final String groupName, final Set<String> groupStack) {
+            final String groupName, final Map<String, String> groupNames, final Set<String> groupStack) {
 
-        final String normalizedGroupName = groupName.trim().toLowerCase().replaceAll("[-_.]+", "-");
+        final String normalizedGroupName = normalizeGroupName(groupName);
         if (!groupStack.add(normalizedGroupName)) {
             LOG.warn("Skipped recursive PEP 735 dependency group include '{}'.", groupName);
             return new ArrayList<>();
         }
 
         final List<DependencyOccurrence> dependencies = new ArrayList<>();
-        final List<String> groupPath = Arrays.asList("dependency-groups", groupName);
+        final String declaredGroupName = groupNames.get(normalizedGroupName);
+        if (declaredGroupName == null) {
+            groupStack.remove(normalizedGroupName);
+            return dependencies;
+        }
+
+        final List<String> groupPath = Arrays.asList("dependency-groups", declaredGroupName);
         final Object value = toml.get(groupPath);
         if (!(value instanceof TomlArray)) {
             groupStack.remove(normalizedGroupName);
@@ -132,13 +143,34 @@ public class PyprojectTomlDependencyParser {
             } else if (item instanceof TomlTable) {
                 final String includeGroup = ((TomlTable) item).getString("include-group");
                 if (includeGroup != null) {
-                    dependencies.addAll(parsePep735Group(toml, inputFile, includeGroup, groupStack));
+                    dependencies.addAll(parsePep735Group(toml, inputFile, includeGroup, groupNames, groupStack));
                 }
             }
         }
 
         groupStack.remove(normalizedGroupName);
         return dependencies;
+    }
+
+    private static Map<String, String> pep735GroupNames(final TomlParseResult toml) {
+        final Map<String, String> groupNames = new LinkedHashMap<>();
+        final TomlTable dependencyGroups = toml.getTable("dependency-groups");
+        if (dependencyGroups == null) {
+            return groupNames;
+        }
+
+        for (String groupName : dependencyGroups.keySet()) {
+            final String existingName = groupNames.putIfAbsent(normalizeGroupName(groupName), groupName);
+            if (existingName != null) {
+                LOG.warn("PEP 735 dependency groups '{}' and '{}' have the same normalized name.",
+                    existingName, groupName);
+            }
+        }
+        return groupNames;
+    }
+
+    private static String normalizeGroupName(final String groupName) {
+        return groupName.trim().toLowerCase(Locale.ROOT).replaceAll("[-_.]+", "-");
     }
 
     private static List<DependencyOccurrence> parseRequirementArray(final TomlArray array, final InputFile inputFile) {

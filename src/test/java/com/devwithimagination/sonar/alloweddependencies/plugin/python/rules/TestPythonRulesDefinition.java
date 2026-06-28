@@ -52,13 +52,18 @@ class TestPythonRulesDefinition {
 
         final Rule templateRule = repository.rule(PythonRulesDefinition.RULE_PYTHON_ALLOWED.rule());
         assertTrue(templateRule.template());
-        assertEquals(2, templateRule.params().size());
+        assertEquals(3, templateRule.params().size());
 
         final Param groupsParam = templateRule.param(PythonRulesDefinition.GROUPS_PARAM_KEY);
         assertNotNull(groupsParam);
         assertEquals(RuleParamType.STRING, groupsParam.type());
-        assertTrue(groupsParam.description().contains("requirements filenames"));
-        assertTrue(groupsParam.description().contains("main and dev"));
+        assertTrue(groupsParam.description().contains("group names"));
+
+        final Param requirementsFilesParam =
+            templateRule.param(PythonRulesDefinition.REQUIREMENTS_FILES_PARAM_KEY);
+        assertNotNull(requirementsFilesParam);
+        assertEquals(RuleParamType.STRING, requirementsFilesParam.type());
+        assertTrue(requirementsFilesParam.description().contains("file paths"));
 
         assertFalse(repository.rule(PythonRulesDefinition.RULE_PYTHON_ALLOWED_MAIN.rule()).template());
         assertFalse(repository.rule(PythonRulesDefinition.RULE_PYTHON_ALLOWED_DEV.rule()).template());

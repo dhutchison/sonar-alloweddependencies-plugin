@@ -1,0 +1,3 @@
+mkdocs==1.6.0
+external-template==1.0.0
+

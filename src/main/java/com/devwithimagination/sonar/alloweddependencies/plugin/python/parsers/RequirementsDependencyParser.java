@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.sonar.api.batch.fs.InputFile;
 
 /**
- * Parses pip requirements files, following include and constraint files.
+ * Parses pip requirements files, following requirement-file includes.
  */
 public class RequirementsDependencyParser {
 
@@ -46,9 +46,10 @@ public class RequirementsDependencyParser {
         }
     }
 
-    public List<DependencyOccurrence> parse(final PythonDependencyGroupType groupType, final List<String> groups) {
+    public List<DependencyOccurrence> parse(final PythonDependencyGroupType groupType,
+            final List<String> requirementsFiles) {
         final List<DependencyOccurrence> dependencies = new ArrayList<>();
-        for (String fileName : fileNamesForGroup(groupType, groups)) {
+        for (String fileName : fileNamesForGroup(groupType, requirementsFiles)) {
             for (InputFile inputFile : findInputFiles(fileName)) {
                 dependencies.addAll(parseFile(inputFile, groupType, new HashSet<>()));
             }
@@ -73,7 +74,8 @@ public class RequirementsDependencyParser {
         return matches;
     }
 
-    private List<String> fileNamesForGroup(final PythonDependencyGroupType groupType, final List<String> groups) {
+    private List<String> fileNamesForGroup(final PythonDependencyGroupType groupType,
+            final List<String> requirementsFiles) {
         final List<String> fileNames = new ArrayList<>();
         if (PythonDependencyGroupType.MAIN.equals(groupType)) {
             fileNames.add(MAIN_REQUIREMENTS_FILE);
@@ -81,16 +83,7 @@ public class RequirementsDependencyParser {
             fileNames.add(REQUIREMENTS_DEV_FILE);
             fileNames.add(DEV_REQUIREMENTS_FILE);
         } else {
-            for (String group : groups) {
-                if ("main".equalsIgnoreCase(group)) {
-                    fileNames.add(MAIN_REQUIREMENTS_FILE);
-                } else if ("dev".equalsIgnoreCase(group)) {
-                    fileNames.add(REQUIREMENTS_DEV_FILE);
-                    fileNames.add(DEV_REQUIREMENTS_FILE);
-                } else {
-                    fileNames.add(group);
-                }
-            }
+            fileNames.addAll(requirementsFiles);
         }
         return fileNames;
     }
@@ -179,16 +172,11 @@ public class RequirementsDependencyParser {
             return shortOptionPath;
         }
 
-        final Optional<String> requirementPath = parseLongIncludePath(line, "--requirement");
-        if (requirementPath.isPresent()) {
-            return requirementPath;
-        }
-
-        return parseLongIncludePath(line, "--constraint");
+        return parseLongIncludePath(line, "--requirement");
     }
 
     private static Optional<String> parseShortIncludePath(final String line) {
-        if (line.length() > 2 && ("-r".equals(line.substring(0, 2)) || "-c".equals(line.substring(0, 2)))
+        if (line.length() > 2 && "-r".equals(line.substring(0, 2))
                 && Character.isWhitespace(line.charAt(2))) {
             return nonEmptyPath(line.substring(3));
         }

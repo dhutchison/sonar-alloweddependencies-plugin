@@ -71,9 +71,7 @@ class TestCreateIssuesOnPythonDependenciesSensor {
 
         sensor.execute(sensorContext);
 
-        assertEquals(10, sensorContext.allIssues().size(), "Expecting Python dependency violations");
-        assertIssue(sensorContext, "constrained-package", PythonRulesDefinition.RULE_PYTHON_ALLOWED_MAIN,
-            "requirements/constraints.txt", 1);
+        assertEquals(9, sensorContext.allIssues().size(), "Expecting Python dependency violations");
         assertIssue(sensorContext, "dev_extra", PythonRulesDefinition.RULE_PYTHON_ALLOWED_DEV,
             "requirements/requirements-dev.txt", 3);
     }
@@ -90,17 +88,20 @@ class TestCreateIssuesOnPythonDependenciesSensor {
                 "flake8",
                 "pep735_lint_extra"))
             .setParam(PythonRulesDefinition.GROUPS_PARAM_KEY, "docs")
+            .setParam(PythonRulesDefinition.REQUIREMENTS_FILES_PARAM_KEY, "requirements/dev-shared.txt")
             .build();
 
         final File baseDir = new File("src/test/resources/python");
         final SensorContextTester sensorContext = SensorContextTester.create(baseDir);
         sensorContext.setActiveRules(new DefaultActiveRules(Arrays.asList(customRule)));
         addInputFile(sensorContext, baseDir, "pyproject/pyproject.toml");
+        addInputFile(sensorContext, baseDir, "requirements/dev-shared.txt");
 
         sensor.execute(sensorContext);
 
-        assertEquals(2, sensorContext.allIssues().size());
+        assertEquals(3, sensorContext.allIssues().size());
         assertIssue(sensorContext, "external-docs", customRuleKey, "pyproject/pyproject.toml", 37);
+        assertIssue(sensorContext, "tox", customRuleKey, "requirements/dev-shared.txt", 1);
     }
 
     @Test

@@ -8,7 +8,6 @@ import java.util.stream.Collectors;
 
 import com.devwithimagination.sonar.alloweddependencies.plugin.common.DependencyOccurrence;
 import com.devwithimagination.sonar.alloweddependencies.plugin.python.checks.AllowedPythonDependenciesCheck;
-import com.devwithimagination.sonar.alloweddependencies.plugin.python.checks.AllowedPythonDependenciesCheckConfig;
 import com.devwithimagination.sonar.alloweddependencies.plugin.python.parsers.PyprojectTomlDependencyParser;
 import com.devwithimagination.sonar.alloweddependencies.plugin.python.parsers.RequirementsDependencyParser;
 import com.devwithimagination.sonar.alloweddependencies.plugin.python.rules.PythonRulesDefinition;
@@ -53,7 +52,6 @@ public class CreateIssuesOnPythonDependenciesSensor implements Sensor {
             .findByRepository(PythonRulesDefinition.REPOSITORY_PYTHON)
             .stream()
             .filter(CreateIssuesOnPythonDependenciesSensor::isSupportedRule)
-            .map(AllowedPythonDependenciesCheckConfig::new)
             .map(AllowedPythonDependenciesCheck::new)
             .collect(Collectors.toList());
 
@@ -77,12 +75,12 @@ public class CreateIssuesOnPythonDependenciesSensor implements Sensor {
             for (InputFile pyprojectFile : pyprojectFiles) {
                 LOG.info("Python dependency input file {}", pyprojectFile);
                 final List<DependencyOccurrence> dependencies = tomlParser.parse(pyprojectFile,
-                    check.getConfig().getGroupType(), check.getConfig().getGroups());
+                    check.getGroupType(), check.getGroups());
                 dependencies.forEach(dependency -> check.scanDependency(dependency, context));
             }
 
             final List<DependencyOccurrence> requirementsDependencies = requirementsParser.parse(
-                check.getConfig().getGroupType(), check.getConfig().getGroups());
+                check.getGroupType(), check.getRequirementsFiles());
             requirementsDependencies.forEach(dependency -> check.scanDependency(dependency, context));
         }
     }
@@ -93,4 +91,3 @@ public class CreateIssuesOnPythonDependenciesSensor implements Sensor {
             || PythonRulesDefinition.RULE_PYTHON_ALLOWED.rule().equals(rule.templateRuleKey());
     }
 }
-

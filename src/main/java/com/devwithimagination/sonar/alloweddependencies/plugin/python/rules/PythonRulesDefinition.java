@@ -33,6 +33,8 @@ public class PythonRulesDefinition implements RulesDefinition {
 
     public static final String GROUPS_PARAM_KEY = "pythonDependencyGroups";
 
+    public static final String REQUIREMENTS_FILES_PARAM_KEY = "pythonRequirementsFiles";
+
     @Override
     public void define(final Context context) {
 
@@ -51,14 +53,18 @@ public class PythonRulesDefinition implements RulesDefinition {
 
         final NewRule templateRule = createRule(pythonRepository, RULE_PYTHON_ALLOWED,
             "Allowed Dependencies (Python template)",
-            "<p>This rule is a template for custom Poetry groups, PEP 735 dependency groups, or explicit " +
-            "requirements filenames.</p>")
+            "<p>This rule is a template for custom Poetry groups, PEP 735 dependency groups, and explicit " +
+            "requirements files.</p>")
             .setTemplate(true);
 
         templateRule.createParam(GROUPS_PARAM_KEY)
             .setName("Python dependency groups")
-            .setDescription("Comma separated list of Poetry group names, PEP 735 dependency group names, " +
-                "or explicit requirements filenames. The values main and dev use the fixed-rule file conventions.")
+            .setDescription("Comma separated list of Poetry group names or PEP 735 dependency group names.")
+            .setType(RuleParamType.STRING);
+
+        templateRule.createParam(REQUIREMENTS_FILES_PARAM_KEY)
+            .setName("Python requirements files")
+            .setDescription("Comma separated list of explicit requirements file paths.")
             .setType(RuleParamType.STRING);
 
         pythonRepository.done();
@@ -87,4 +93,3 @@ public class PythonRulesDefinition implements RulesDefinition {
         return rule;
     }
 }
-

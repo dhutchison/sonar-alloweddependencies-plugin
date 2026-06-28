@@ -163,6 +163,23 @@ class TestPyprojectTomlDependencyParser {
         assertLineNumber(dependencies, "second-package", 6);
     }
 
+    @Test
+    void normalizesPep735GroupNamesBeforeLookup() {
+        final InputFile inputFile = createGeneratedInputFile(
+            "[dependency-groups]\n" +
+            "test_docs = [\"direct-package\"]\n" +
+            "dev = [{include-group = \"test-docs\"}]\n");
+
+        final PyprojectTomlDependencyParser parser = new PyprojectTomlDependencyParser();
+        final List<DependencyOccurrence> includedDependencies = parser.parse(
+            inputFile, PythonDependencyGroupType.DEV, Arrays.asList("dev"));
+        final List<DependencyOccurrence> configuredDependencies = parser.parse(
+            inputFile, PythonDependencyGroupType.CUSTOM, Arrays.asList("TEST.DOCS"));
+
+        assertEquals(Arrays.asList("direct-package"), dependencyNames(includedDependencies));
+        assertEquals(Arrays.asList("direct-package"), dependencyNames(configuredDependencies));
+    }
+
     private static InputFile createInputFile(final String path) throws IOException {
         final File moduleBaseDir = new File(path);
         final File basePath = new File(moduleBaseDir, "pyproject.toml");

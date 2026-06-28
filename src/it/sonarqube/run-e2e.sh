@@ -151,6 +151,23 @@ activate_rule() {
         --data-urlencode "params=${parameter}=${value}" >/dev/null
 }
 
+activate_rule_without_parameters() {
+    local rule="$1"
+    api POST "/api/qualityprofiles/activate_rule" \
+        --data-urlencode "key=${PROFILE_KEY}" \
+        --data-urlencode "rule=${rule}" >/dev/null
+}
+
+create_python_template_rule() {
+    api POST "/api/rules/create" \
+        --data-urlencode "customKey=python_allowed_dependencies_e2e_template" \
+        --data-urlencode "templateKey=allowed-dependencies-python:python-allowed-dependencies" \
+        --data-urlencode "name=Allowed Dependencies Python Template E2E" \
+        --data-urlencode "markdownDescription=E2E custom Python dependency rule" \
+        --data-urlencode "params=pythonDependencies=regex:^(sphinx|mypy|mkdocs)$;pythonDependencyGroups=docs;pythonRequirementsFiles=requirements-template.txt" \
+        >/dev/null
+}
+
 set_default_profile() {
     local language="$1"
     local profile_name="$2"
@@ -187,6 +204,7 @@ create_quality_profiles() {
     set_default_profile xml "Allowed Dependencies XML E2E"
 
     create_profile py "Allowed Dependencies Python E2E"
+    create_python_template_rule
     activate_rule \
         "allowed-dependencies-python:python-allowed-dependencies-main" \
         "pythonDependencies" \
@@ -195,6 +213,8 @@ create_quality_profiles() {
         "allowed-dependencies-python:python-allowed-dependencies-dev" \
         "pythonDependencies" \
         $'pytest\nruff\nmypy\nsphinx\neditable-package'
+    activate_rule_without_parameters \
+        "allowed-dependencies-python:python_allowed_dependencies_e2e_template"
     set_default_profile py "Allowed Dependencies Python E2E"
 }
 
@@ -430,6 +450,9 @@ main() {
         python-pyproject \
         alloweddependencies-fixture-python-pyproject \
         allowed-dependencies-python \
+        "allowed-dependencies-python:python_allowed_dependencies_e2e_template|Remove this forbidden dependency: external-docs-pep735.|pyproject.toml|34" \
+        "allowed-dependencies-python:python_allowed_dependencies_e2e_template|Remove this forbidden dependency: external-docs-poetry.|pyproject.toml|20" \
+        "allowed-dependencies-python:python_allowed_dependencies_e2e_template|Remove this forbidden dependency: external-lint.|pyproject.toml|29" \
         "allowed-dependencies-python:python-allowed-dependencies-dev|Remove this forbidden dependency: external-dev.|pyproject.toml|16" \
         "allowed-dependencies-python:python-allowed-dependencies-dev|Remove this forbidden dependency: external-lint.|pyproject.toml|29" \
         "allowed-dependencies-python:python-allowed-dependencies-dev|Remove this forbidden dependency: external-pep735-dev.|pyproject.toml|25" \
@@ -440,6 +463,7 @@ main() {
         python-pip \
         alloweddependencies-fixture-python-pip \
         allowed-dependencies-python \
+        "allowed-dependencies-python:python_allowed_dependencies_e2e_template|Remove this forbidden dependency: external-template.|requirements-template.txt|2" \
         "allowed-dependencies-python:python-allowed-dependencies-dev|Remove this forbidden dependency: external-dev-shared.|dev-shared.txt|2" \
         "allowed-dependencies-python:python-allowed-dependencies-dev|Remove this forbidden dependency: external-dev.|requirements-dev.txt|3" \
         "allowed-dependencies-python:python-allowed-dependencies-main|Remove this forbidden dependency: external-main.|requirements.txt|3" \

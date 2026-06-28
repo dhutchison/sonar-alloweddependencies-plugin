@@ -35,8 +35,9 @@ Add three rules:
 * `allowed-dependencies-python:python-allowed-dependencies`
 
 The first two are fixed main/dev rules. The third is a template rule with a
-`pythonDependencyGroups` parameter for custom Poetry groups, PEP 735 groups, or
-explicit requirements filenames.
+`pythonDependencyGroups` parameter for custom Poetry and PEP 735 groups, and a
+separate `pythonRequirementsFiles` parameter for explicit requirements file
+paths.
 
 Use the existing newline-separated allow-list model with a new
 `pythonDependencies` parameter. Exact Python package names are normalized before
@@ -54,8 +55,10 @@ Support these dependency sources:
 * Template rule: `[dependency-groups].<group>`,
   `[tool.poetry.group.<group>.dependencies]`, and explicit requirements files
 
-PEP 735 `{include-group = "..."}` entries and pip `-r` / `--requirement` and
-`-c` / `--constraint` includes are followed recursively with cycle detection.
+PEP 735 `{include-group = "..."}` entries and pip `-r` / `--requirement`
+includes are followed recursively with cycle detection. Pip `-c` /
+`--constraint` files are ignored because they restrict versions rather than
+declare direct dependencies.
 When a dev requirements file includes `requirements.txt`, that include is
 treated as delegated to the main rule and is not traversed by the dev rule.
 
@@ -67,9 +70,12 @@ that provisions quality profiles, scans representative fixtures, and asserts the
 issues returned by SonarQube.
 
 The SonarQube end-to-end suite covers the new Python `pyproject.toml` and pip
-requirements fixtures, and also keeps coverage for the existing NPM, Maven POM,
-Maven `.flattened-pom.xml`, and non-POM XML descriptor behavior. The flattened
-POM fixture documents a scanner requirement discovered during implementation:
+requirements fixtures, including a template-derived rule configured with
+separate dependency-group and requirements-file parameters. Exact issue-set
+assertions verify that the template rule does not also scan the fixed main/dev
+sources. The suite also keeps coverage for the existing NPM, Maven POM, Maven
+`.flattened-pom.xml`, and non-POM XML descriptor behavior. The flattened POM
+fixture documents a scanner requirement discovered during implementation:
 generated `.flattened-pom.xml` files must be listed directly in `sonar.sources`
 to be exposed to the XML/plugin sensors in this harness.
 
@@ -109,4 +115,4 @@ Tradeoffs:
   both formats are common enough that partial Python support would be hard to
   validate manually.
 * Avoid following requirements includes. This was rejected because split
-  requirements files are common, especially for dev and constraint files.
+  requirements files are common, especially for development dependencies.
