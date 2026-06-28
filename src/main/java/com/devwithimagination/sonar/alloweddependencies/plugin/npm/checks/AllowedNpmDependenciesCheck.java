@@ -1,7 +1,5 @@
 package com.devwithimagination.sonar.alloweddependencies.plugin.npm.checks;
 
-import static com.devwithimagination.sonar.alloweddependencies.plugin.common.Constants.ISSUE_MESSAGE;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,13 +12,13 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.devwithimagination.sonar.alloweddependencies.plugin.common.DependencyIssueReporter;
 import com.devwithimagination.sonar.alloweddependencies.plugin.npm.rules.NpmRulesDefinition;
 import com.devwithimagination.sonar.alloweddependencies.plugin.util.PredicateFactory;
 
 import org.sonar.api.batch.fs.InputFile;
 import org.sonar.api.batch.rule.ActiveRule;
 import org.sonar.api.batch.sensor.SensorContext;
-import org.sonar.api.batch.sensor.issue.NewIssue;
 import org.sonar.api.rule.RuleKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -144,29 +142,6 @@ public class AllowedNpmDependenciesCheck {
     }
 
     /**
-     * Creates a new issue for our rule violation.
-     *
-     * @param inputFile     the file being scanned
-     * @param dependency    the name of the dependency which was found
-     * @param lineNumber    the line number the dependency was found on
-     * @param sensorContext the sensor context
-     */
-    private void createIssue(final InputFile inputFile, final String dependency, final Integer lineNumber, final SensorContext sensorContext) {
-
-        LOG.info("Dependency " + dependency + " is not on the allowed list");
-
-        NewIssue issue = sensorContext.newIssue();
-        issue
-            .forRule(ruleKey)
-            .at(
-                issue.newLocation()
-                    .on(inputFile)
-                    .at(inputFile.selectLine(lineNumber))
-                    .message(String.format(ISSUE_MESSAGE, dependency)))
-            .save();
-    }
-
-    /**
      * Scan the supplied file for issues.
      * @param inputFile the file to scan
      * @param sensorContext the sensor context
@@ -182,7 +157,9 @@ public class AllowedNpmDependenciesCheck {
          */
         dependencies.entrySet().forEach(dep -> {
             if (!allowedDependenciesPredicate.test(dep.getKey())) {
-                createIssue(inputFile, dep.getKey(), dep.getValue(), sensorContext);
+                LOG.info("Dependency {} is not on the allowed list", dep.getKey());
+                DependencyIssueReporter.reportIssue(
+                    sensorContext, ruleKey, inputFile, dep.getValue(), dep.getKey());
             }
         });
     }
