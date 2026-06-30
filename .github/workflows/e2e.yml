@@ -1,0 +1,35 @@
+name: SonarQube E2E
+
+on:
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    name: All dependency rules against SonarQube
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'corretto'
+          java-version: '21'
+          cache: 'maven'
+
+      - name: Configure Elasticsearch host limits
+        run: sudo sysctl -w vm.max_map_count=524288
+
+      - name: Run SonarQube E2E suite
+        run: src/it/sonarqube/run-e2e.sh
+
+      - name: Upload E2E report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sonarqube-e2e-report
+          path: target/e2e-reports
+          if-no-files-found: warn

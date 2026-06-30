@@ -1,0 +1,37 @@
+[project]
+name = "allowed-dependencies-python-pyproject-fixture"
+version = "1.0.0"
+dependencies = [
+    "requests>=2",
+    "external-main==1.0.0",
+]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.115.0"
+external-poetry = "^1.0.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+external-dev = "^1.0.0"
+
+[tool.poetry.group.docs.dependencies]
+sphinx = "^7.0.0"
+external-docs-poetry = "^1.0.0"
+
+[dependency-groups]
+dev = [
+    "ruff==0.6.0",
+    {include-group = "lint"},
+    "external-pep735-dev",
+]
+lint = [
+    "mypy",
+    "external-lint",
+]
+docs = [
+    "sphinx",
+    {include-group = "lint"},
+    "external-docs-pep735",
+]
+

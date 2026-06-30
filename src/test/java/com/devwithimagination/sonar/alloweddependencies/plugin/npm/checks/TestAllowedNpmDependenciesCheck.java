@@ -74,6 +74,16 @@ class TestAllowedNpmDependenciesCheck {
             .build();
     }
 
+    InputFile createInputFileWithContents(final String contents) {
+        final File moduleBaseDir = new File("src/test/resources/npm");
+        final File basePath = new File(moduleBaseDir, "package.json");
+
+        return new TestInputFileBuilder(getClass().getName(), moduleBaseDir, basePath)
+            .setCharset(Charset.forName("UTF-8"))
+            .setContents(contents)
+            .build();
+    }
+
     /**
      * Test case that verifies the parseDependencies method returns the expected
      * result
@@ -129,6 +139,23 @@ class TestAllowedNpmDependenciesCheck {
 
         /* Compare against the expected results */
         assertEquals(0, actualResult.size(), "Expected results to have the same size");
+    }
+
+    @Test
+    void testParseDependenciesMatchesOnlyTheQuotedDependencyName() {
+        final InputFile regexInputFile = createInputFileWithContents(String.join("\n",
+            "{",
+            "  \"dependencies\": {",
+            "    \"@scope/package.name-with_parts\": \"1.0.0\",",
+            "    \"invalid\"name\": \"2.0.0\"",
+            "  }",
+            "}"));
+        final ActiveRule rule = createTestRule(NpmRulesDefinition.RULE_NPM_ALLOWED, "");
+
+        final Map<String, Integer> actualResult =
+            new AllowedNpmDependenciesCheck(rule).parseDependencies(regexInputFile);
+
+        assertEquals(Map.of("@scope/package.name-with_parts", 3), actualResult);
     }
 
     /**
