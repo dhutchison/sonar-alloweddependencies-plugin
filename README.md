@@ -4,7 +4,9 @@ This [SonarQube](http://www.sonarqube.org/) plugin ensures that projects in an o
 
 This plugin exposes rules for the following dependency descriptor files:
 * NPM `package.json`
-* Maven `pom.xml` / `.flattened-pom.xml`
+* Maven `pom.xml` / `.flattened-pom.xml` dependencies, plugins, and build
+  extensions
+* Maven `.mvn/extensions.xml` core extensions
 * Python `pyproject.toml` and pip requirements files
 
 This plugin does not:
@@ -27,7 +29,10 @@ Download the latest (non-snapshot) version of the [package](https://github.com/d
 
 ## Usage
 
-This plugin requires that the files to be scanned (e.g. `pom.xml`, `.flattened-pom.xml`, `package.json`, `pyproject.toml` or `requirements.txt`) is included in the sources path which SonarQube is configured to analyse.
+This plugin requires that the files to be scanned (e.g. `pom.xml`,
+`.flattened-pom.xml`, `.mvn/extensions.xml`, `package.json`, `pyproject.toml` or
+`requirements.txt`) are included in the sources path which SonarQube is
+configured to analyse.
 
 Python rules also require at least one `.py` file in the analyzed sources so
 SonarQube detects the Python language, downloads the plugin, and runs the Python
@@ -67,15 +72,28 @@ The default behaviour is to treat each row as an exact string match. Exact match
 
 ### Maven Rules
 
-Three rules are made available in the `XML` language by this plugin. Two of these are regular rules:
+Five rules are made available in the `XML` language by this plugin. Four of these are regular rules:
 * Allowed Dependencies (Test Scope) - `allowed-dependencies-maven:maven-allowed-dependencies-test`
     * Applies to dependencies with a `test` scope only
 * Allowed Dependencies (Main Scopes) - `allowed-dependencies-maven:maven-allowed-dependencies-main`
     * Applies to dependencies with one of the scopes `compile`, `provided`, `runtime`. Any dependency listed without an explicit scope defaults to `compile`
+* Allowed Maven Plugins - `allowed-dependencies-maven:maven-allowed-plugins`
+    * Applies to activating build and reporting plugin declarations, including
+      declarations in inactive profiles
+* Allowed Maven Extensions - `allowed-dependencies-maven:maven-allowed-extensions`
+    * Applies to POM build extensions and core extensions in `.mvn/extensions.xml`
 * Allowed Dependencies (template) - `allowed-dependencies-maven:maven-allowed-dependencies`
     * A template rule which allows custom rules to be created targeting a set list of scopes. This has an extra `mavenScopes` parameter for supplying a comma seperated list of scopes.
 
-All three of these take a configuration element for a newline separated list of dependencies, as `groupId:artifactId` entries, which are allowed in the scopes associated with the rule. The default behaviour is to treat each row as an exact string match. Exact matches are case-insensitive. Rows can be prefixed with `regex:` to interpret them as a regular expression. Blank rows and rows starting with `#` are ignored. For example, `regex:org.\\junit\\.jupiter:.*` will allow all dependencies with the `groupId` of `org.junit.jupiter`. When a rule in enabled for a scope, a rule violation will be raised for any dependencies which are not in the allowed list.
+The three dependency rules take a configuration element for a newline separated
+list of dependencies, as `groupId:artifactId` entries, which are allowed in the
+scopes associated with the rule. The default behaviour is to treat each row as
+an exact string match. Exact matches are case-insensitive. Rows can be prefixed
+with `regex:` to interpret them as a regular expression. Blank rows and rows
+starting with `#` are ignored. For example, `regex:org.\\junit\\.jupiter:.*`
+will allow all dependencies with the `groupId` of `org.junit.jupiter`. When a
+rule is enabled for a scope, a rule violation will be raised for any dependencies
+which are not in the allowed list.
 
 Where a project uses the [maven-flatten-plugin](https://www.mojohaus.org/flatten-maven-plugin/index.html), this plugin will scan the created `.flattened-pom.xml` file. Note that depending on the `flattenMode` value used this may lose valuable information. This has primarily been tested with `resolveCiFriendliesOnly` which only flattens version number properties.
 
@@ -90,6 +108,40 @@ regex:org\.eclipse\.microprofile:.*
 
 com.github.javafaker:javafaker
 ```
+
+The `mavenPlugins` parameter uses the same newline-separated exact and `regex:`
+syntax. Plugins are compared as `groupId:artifactId`; versions are ignored. A
+plugin declaration or exact allow-list row without a group defaults to
+`org.apache.maven.plugins`, so these entries are equivalent:
+
+```text
+maven-compiler-plugin
+org.apache.maven.plugins:maven-compiler-plugin
+```
+
+Regex rows always match the full canonical coordinate. The plugin rule checks
+`build/plugins` and `reporting/plugins` at project and profile level, regardless
+of whether a profile is active during analysis. It deliberately ignores
+`pluginManagement`, because those entries configure plugins without activating
+them.
+
+The `mavenExtensions` parameter requires full `groupId:artifactId` entries for
+exact matches; extensions have no default group. It checks both
+`build/extensions` in POM files and extension entries in
+`.mvn/extensions.xml`. Versions are ignored for extensions too.
+
+All Maven checks are source-based. They inspect only declarations physically
+present in SonarQube-indexed project files; they do not resolve parent POMs or
+construct Maven's effective model. Hidden and generated files may need to be
+listed explicitly in `sonar.sources`. For example:
+
+```properties
+sonar.sources=src,pom.xml,.flattened-pom.xml,.mvn/extensions.xml
+```
+
+In particular, use the exact `.mvn/extensions.xml` path. Relying on
+`sonar.sources=.` or an inclusion pattern can leave hidden XML files unavailable
+to XML sensors, depending on the scanner used.
 
 ### Python Rules
 
@@ -140,8 +192,9 @@ mvn verify -Pintegration-tests
 ```
 
 An optional black-box test deploys the built plugin to a disposable SonarQube
-container and verifies the NPM, Maven POM, Maven flattened POM, non-POM XML,
-and Python fixed and template rules through the SonarQube Web API:
+container and verifies the NPM, Maven POM, Maven flattened POM, Maven plugin and
+extension, non-POM XML, and Python fixed and template rules through the
+SonarQube Web API:
 
 ```bash
 src/it/sonarqube/run-e2e.sh

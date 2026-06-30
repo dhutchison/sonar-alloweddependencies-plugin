@@ -118,15 +118,19 @@ assert_plugin_registration() {
         jq --exit-status 'any(.plugins[]; .key == "alloweddependencies")' >/dev/null ||
         fail "The alloweddependencies plugin was not registered by SonarQube"
 
-    local repository rule_count
+    local repository rule_count expected_rule_count
     for repository in \
         allowed-dependencies-npm \
         allowed-dependencies-maven \
         allowed-dependencies-python; do
+        expected_rule_count=3
+        if [[ ${repository} == "allowed-dependencies-maven" ]]; then
+            expected_rule_count=5
+        fi
         rule_count="$(api GET "/api/rules/search?repositories=${repository}&ps=10" |
             jq -r '.total')"
-        [[ ${rule_count} == "3" ]] ||
-            fail "Expected 3 rules in ${repository}, but SonarQube registered ${rule_count}"
+        [[ ${rule_count} == "${expected_rule_count}" ]] ||
+            fail "Expected ${expected_rule_count} rules in ${repository}, but SonarQube registered ${rule_count}"
     done
 }
 
@@ -201,6 +205,14 @@ create_quality_profiles() {
         "allowed-dependencies-maven:maven-allowed-dependencies-test" \
         "mavenDependencies" \
         $'org.junit.jupiter:junit-jupiter-api\nregex:^org\\.assertj:.*$'
+    activate_rule \
+        "allowed-dependencies-maven:maven-allowed-plugins" \
+        "mavenPlugins" \
+        $'maven-compiler-plugin\norg.codehaus.mojo:flatten-maven-plugin\nregex:^org\\.codehaus\\.mojo:build-helper-.*$'
+    activate_rule \
+        "allowed-dependencies-maven:maven-allowed-extensions" \
+        "mavenExtensions" \
+        $'com.acme:allowed-extension\nregex:^com\\.trusted:.*$'
     set_default_profile xml "Allowed Dependencies XML E2E"
 
     create_profile py "Allowed Dependencies Python E2E"
@@ -432,7 +444,18 @@ main() {
         alloweddependencies-fixture-maven-pom \
         allowed-dependencies-maven \
         "allowed-dependencies-maven:maven-allowed-dependencies-main|Remove this forbidden dependency: com.external:runtime-lib.|pom.xml|17" \
-        "allowed-dependencies-maven:maven-allowed-dependencies-test|Remove this forbidden dependency: org.mockito:mockito-core.|pom.xml|29"
+        "allowed-dependencies-maven:maven-allowed-dependencies-test|Remove this forbidden dependency: org.mockito:mockito-core.|pom.xml|29" \
+        "allowed-dependencies-maven:maven-allowed-extensions|Remove this forbidden Maven extension: com.external:forbidden-pom-extension.|pom.xml|63" \
+        "allowed-dependencies-maven:maven-allowed-plugins|Remove this forbidden Maven plugin: com.external:forbidden-build-plugin.|pom.xml|43" \
+        "allowed-dependencies-maven:maven-allowed-plugins|Remove this forbidden Maven plugin: com.external:forbidden-inactive-profile-plugin.|pom.xml|94" \
+        "allowed-dependencies-maven:maven-allowed-plugins|Remove this forbidden Maven plugin: com.external:forbidden-profile-reporting-plugin.|pom.xml|110" \
+        "allowed-dependencies-maven:maven-allowed-plugins|Remove this forbidden Maven plugin: com.external:forbidden-reporting-plugin.|pom.xml|77"
+
+    scan_and_verify \
+        maven-extensions-file \
+        alloweddependencies-fixture-maven-extensions-file \
+        allowed-dependencies-maven \
+        "allowed-dependencies-maven:maven-allowed-extensions|Remove this forbidden Maven extension: com.external:forbidden-core-extension.|.mvn/extensions.xml|8"
 
     scan_maven_and_verify \
         maven-flattened-pom \

@@ -33,5 +33,86 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-</project>
 
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+            </plugin>
+            <plugin>
+                <groupId>com.external</groupId>
+                <artifactId>forbidden-build-plugin</artifactId>
+                <version>1.0.0</version>
+            </plugin>
+        </plugins>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>com.external</groupId>
+                    <artifactId>ignored-managed-plugin</artifactId>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <extensions>
+            <extension>
+                <groupId>com.acme</groupId>
+                <artifactId>allowed-extension</artifactId>
+                <version>1.0.0</version>
+            </extension>
+            <extension>
+                <groupId>com.external</groupId>
+                <artifactId>forbidden-pom-extension</artifactId>
+                <version>1.0.0</version>
+            </extension>
+        </extensions>
+    </build>
+
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-report-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>com.external</groupId>
+                <artifactId>forbidden-reporting-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </reporting>
+
+    <profiles>
+        <profile>
+            <id>ci-only</id>
+            <activation>
+                <property>
+                    <name>never-active-in-e2e</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.external</groupId>
+                        <artifactId>forbidden-inactive-profile-plugin</artifactId>
+                    </plugin>
+                </plugins>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>com.external</groupId>
+                            <artifactId>ignored-profile-managed-plugin</artifactId>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+            <reporting>
+                <plugins>
+                    <plugin>
+                        <groupId>com.external</groupId>
+                        <artifactId>forbidden-profile-reporting-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </reporting>
+        </profile>
+    </profiles>
+</project>

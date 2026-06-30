@@ -46,6 +46,14 @@ public class MavenRulesDefinition implements RulesDefinition {
      */
     public static final RuleKey RULE_MAVEN_ALLOWED_TEST = RuleKey.of(REPOSITORY_MAVEN, "maven-allowed-dependencies-test");
 
+    /** The rule key for the Maven plugin allow-list check. */
+    public static final RuleKey RULE_MAVEN_ALLOWED_PLUGINS =
+        RuleKey.of(REPOSITORY_MAVEN, "maven-allowed-plugins");
+
+    /** The rule key for the Maven extension allow-list check. */
+    public static final RuleKey RULE_MAVEN_ALLOWED_EXTENSIONS =
+        RuleKey.of(REPOSITORY_MAVEN, "maven-allowed-extensions");
+
     /**
      * The setting key for the maven allowed dependency list.
      */
@@ -55,6 +63,12 @@ public class MavenRulesDefinition implements RulesDefinition {
      * The setting parameter for the maven rule scope.
      */
     public static final String SCOPES_PARAM_KEY = "mavenScopes";
+
+    /** The setting key for the Maven plugin allow list. */
+    public static final String PLUGINS_PARAM_KEY = "mavenPlugins";
+
+    /** The setting key for the Maven extension allow list. */
+    public static final String EXTENSIONS_PARAM_KEY = "mavenExtensions";
 
     @Override
     public void define(Context context) {
@@ -90,8 +104,45 @@ public class MavenRulesDefinition implements RulesDefinition {
         createMavenRuleWithCommonConfigurationParts(javaRepository, RULE_MAVEN_ALLOWED_TEST, "Allowed Dependencies (Test Scope)",
             "<p>This rule will look at dependencies in the \"test\" scope only.</p>");
 
+        createCoordinateRule(javaRepository, RULE_MAVEN_ALLOWED_PLUGINS, "Allowed Maven Plugins",
+            "Only approved Maven plugins should be used.",
+            "Generates an issue for every activated Maven build or reporting plugin which is not in the allowed list.",
+            PLUGINS_PARAM_KEY, "Allowed Maven Plugins",
+            "Newline separated list of Maven plugin coordinates. Exact artifact-only rows use the "
+                + "org.apache.maven.plugins default group. Regex rows match canonical <groupId>:<artifactId> coordinates.",
+            "plugin");
+
+        createCoordinateRule(javaRepository, RULE_MAVEN_ALLOWED_EXTENSIONS, "Allowed Maven Extensions",
+            "Only approved Maven extensions should be used.",
+            "Generates an issue for every Maven extension which is not in the allowed list.",
+            EXTENSIONS_PARAM_KEY, "Allowed Maven Extensions",
+            "Newline separated list of fully-qualified <groupId>:<artifactId> Maven extension coordinates. "
+                + "Regex rows match canonical coordinates.",
+            "extension");
+
         // don't forget to call done() to finalize the definition
         javaRepository.done();
+    }
+
+    private NewRule createCoordinateRule(final NewRepository repository, final RuleKey ruleKey, final String name,
+            final String summary, final String issueDescription, final String parameterKey,
+            final String parameterName, final String parameterDescription, final String tag) {
+
+        final NewRule createdRule = repository.createRule(ruleKey.rule())
+            .setName(name)
+            .setHtmlDescription("<p>" + summary + "</p><p>" + issueDescription + "</p>")
+            .setTags("maven", tag)
+            .setStatus(RuleStatus.BETA)
+            .setSeverity(Severity.MINOR);
+
+        createdRule.setDebtRemediationFunction(
+            createdRule.debtRemediationFunctions().linearWithOffset("1h", "30min"));
+        createdRule.createParam(parameterKey)
+            .setName(parameterName)
+            .setDescription(parameterDescription + " Exact matches are case-insensitive. Prefix a row with regex: "
+                + "to use a regular expression. Blank lines and rows starting with # are ignored.")
+            .setType(RuleParamType.TEXT);
+        return createdRule;
     }
 
     /**
