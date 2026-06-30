@@ -46,6 +46,14 @@ public class MavenRulesDefinition implements RulesDefinition {
      */
     public static final RuleKey RULE_MAVEN_ALLOWED_TEST = RuleKey.of(REPOSITORY_MAVEN, "maven-allowed-dependencies-test");
 
+    /** The rule key for the Maven plugin allow-list check. */
+    public static final RuleKey RULE_MAVEN_ALLOWED_PLUGINS =
+        RuleKey.of(REPOSITORY_MAVEN, "maven-allowed-plugins");
+
+    /** The rule key for the Maven extension allow-list check. */
+    public static final RuleKey RULE_MAVEN_ALLOWED_EXTENSIONS =
+        RuleKey.of(REPOSITORY_MAVEN, "maven-allowed-extensions");
+
     /**
      * The setting key for the maven allowed dependency list.
      */
@@ -55,6 +63,12 @@ public class MavenRulesDefinition implements RulesDefinition {
      * The setting parameter for the maven rule scope.
      */
     public static final String SCOPES_PARAM_KEY = "mavenScopes";
+
+    /** The setting key for the Maven plugin allow list. */
+    public static final String PLUGINS_PARAM_KEY = "mavenPlugins";
+
+    /** The setting key for the Maven extension allow list. */
+    public static final String EXTENSIONS_PARAM_KEY = "mavenExtensions";
 
     @Override
     public void define(Context context) {
@@ -90,8 +104,85 @@ public class MavenRulesDefinition implements RulesDefinition {
         createMavenRuleWithCommonConfigurationParts(javaRepository, RULE_MAVEN_ALLOWED_TEST, "Allowed Dependencies (Test Scope)",
             "<p>This rule will look at dependencies in the \"test\" scope only.</p>");
 
+        createCoordinateRule(javaRepository, RULE_MAVEN_ALLOWED_PLUGINS,
+            new CoordinateRuleDefinition(
+                new RulePresentation("Allowed Maven Plugins", "Only approved Maven plugins should be used.",
+                    "Generates an issue for every activated Maven build or reporting plugin which is not in the allowed list.",
+                    "plugin"),
+                new ParameterDefinition(PLUGINS_PARAM_KEY, "Allowed Maven Plugins",
+                    "Newline separated list of Maven plugin coordinates. Exact artifact-only rows use the "
+                        + "org.apache.maven.plugins default group. Regex rows match canonical "
+                        + "<groupId>:<artifactId> coordinates.")));
+
+        createCoordinateRule(javaRepository, RULE_MAVEN_ALLOWED_EXTENSIONS,
+            new CoordinateRuleDefinition(
+                new RulePresentation("Allowed Maven Extensions", "Only approved Maven extensions should be used.",
+                    "Generates an issue for every Maven extension which is not in the allowed list.", "extension"),
+                new ParameterDefinition(EXTENSIONS_PARAM_KEY, "Allowed Maven Extensions",
+                    "Newline separated list of fully-qualified <groupId>:<artifactId> Maven extension coordinates. "
+                        + "Regex rows match canonical coordinates.")));
+
         // don't forget to call done() to finalize the definition
         javaRepository.done();
+    }
+
+    private NewRule createCoordinateRule(final NewRepository repository, final RuleKey ruleKey,
+            final CoordinateRuleDefinition definition) {
+
+        final NewRule createdRule = repository.createRule(ruleKey.rule())
+            .setName(definition.presentation.name)
+            .setHtmlDescription("<p>" + definition.presentation.summary + "</p><p>"
+                + definition.presentation.issueDescription + "</p>")
+            .setTags("maven", definition.presentation.tag)
+            .setStatus(RuleStatus.BETA)
+            .setSeverity(Severity.MINOR);
+
+        createdRule.setDebtRemediationFunction(
+            createdRule.debtRemediationFunctions().linearWithOffset("1h", "30min"));
+        createdRule.createParam(definition.parameter.key)
+            .setName(definition.parameter.name)
+            .setDescription(definition.parameter.description
+                + " Exact matches are case-insensitive. Prefix a row with regex: "
+                + "to use a regular expression. Blank lines and rows starting with # are ignored.")
+            .setType(RuleParamType.TEXT);
+        return createdRule;
+    }
+
+    private static final class CoordinateRuleDefinition {
+        private final RulePresentation presentation;
+        private final ParameterDefinition parameter;
+
+        private CoordinateRuleDefinition(final RulePresentation presentation, final ParameterDefinition parameter) {
+            this.presentation = presentation;
+            this.parameter = parameter;
+        }
+    }
+
+    private static final class RulePresentation {
+        private final String name;
+        private final String summary;
+        private final String issueDescription;
+        private final String tag;
+
+        private RulePresentation(final String name, final String summary, final String issueDescription,
+                final String tag) {
+            this.name = name;
+            this.summary = summary;
+            this.issueDescription = issueDescription;
+            this.tag = tag;
+        }
+    }
+
+    private static final class ParameterDefinition {
+        private final String key;
+        private final String name;
+        private final String description;
+
+        private ParameterDefinition(final String key, final String name, final String description) {
+            this.key = key;
+            this.name = name;
+            this.description = description;
+        }
     }
 
     /**

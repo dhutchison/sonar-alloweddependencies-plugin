@@ -7,7 +7,8 @@ Community Build instance running this plugin.
 
 The opt-in suite builds the plugin, starts a disposable SonarQube container,
 provisions JSON, XML, and Python quality profiles through the Web API, scans the
-NPM, Maven POM, Maven flattened POM, non-POM XML, and Python fixtures, and
+NPM, Maven POM, Maven flattened POM, Maven core-extension, non-POM XML, and
+Python fixtures, and
 asserts the exact plugin issues returned by SonarQube:
 
 ```bash
@@ -103,6 +104,8 @@ Activate:
 
 * `allowed-dependencies-maven:maven-allowed-dependencies-main`
 * `allowed-dependencies-maven:maven-allowed-dependencies-test`
+* `allowed-dependencies-maven:maven-allowed-plugins`
+* `allowed-dependencies-maven:maven-allowed-extensions`
 
 Use this value for the main-scopes rule's `mavenDependencies` parameter:
 
@@ -120,6 +123,20 @@ Use this value for the test-scope rule's `mavenDependencies` parameter:
 ```text
 org.junit.jupiter:junit-jupiter-api
 regex:^org\.assertj:.*$
+```
+
+Use this value for the `mavenPlugins` parameter:
+
+```text
+maven-compiler-plugin
+regex:^org\.codehaus\.mojo:build-helper-.*$
+```
+
+Use this value for the `mavenExtensions` parameter:
+
+```text
+com.acme:allowed-extension
+regex:^com\.trusted:.*$
 ```
 
 ### Python Profile
@@ -175,11 +192,28 @@ mvn process-resources org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
   -Dsonar.host.url=http://localhost:9000 \
   -Dsonar.token=<token> \
   -Dsonar.qualitygate.wait=true
+```
 
 This fixture intentionally sets `sonar.sources=.flattened-pom.xml`. Using
 `sonar.sources=.` with `sonar.inclusions=.flattened-pom.xml` can index the file
 without exposing it to XML sensors.
 
+```bash
+cd ../maven-extensions-file
+docker run --rm \
+  --network sonarqube_default \
+  -v "$PWD:/usr/src" \
+  sonarsource/sonar-scanner-cli:latest \
+  -Dsonar.host.url=http://sonarqube:9000 \
+  -Dsonar.token=<token>
+```
+
+This fixture intentionally sets `sonar.sources=.mvn/extensions.xml`. The
+scanner does not reliably make hidden XML files available to XML sensors when
+only a directory or inclusion pattern is configured, so projects that govern
+core extensions should list this exact file in `sonar.sources`.
+
+```bash
 cd ../xml-non-pom
 docker run --rm \
   --network sonarqube_default \
@@ -221,8 +255,12 @@ sonar-scanner -Dsonar.host.url=http://localhost:9000 -Dsonar.token=<token>
 Expected plugin issues:
 
 * `npm-package`: `left-pad`, `jest`, and `@external/plugin` should be reported.
-* `maven-pom`: `com.external:runtime-lib` and `org.mockito:mockito-core` should be reported.
+* `maven-pom`: the two forbidden dependencies, four forbidden active plugins,
+  and one forbidden POM build extension should be reported; allowed
+  shorthand/regex entries and both `pluginManagement` declarations should not
+  be reported.
 * `maven-flattened-pom`: `com.external:flattened-lib` and `org.hamcrest:hamcrest` should be reported.
+* `maven-extensions-file`: `com.external:forbidden-core-extension` should be reported from `.mvn/extensions.xml`; the regex-allowed extension should not be reported.
 * `xml-non-pom`: no allowed-dependencies plugin issues should be reported.
 * `python-pyproject`: the fixed rules should report `external-main`, `external-poetry`, `external-dev`, `external-pep735-dev`, and `external-lint`; the template-derived docs rule should report `external-docs-poetry`, `external-docs-pep735`, and `external-lint`.
 * `python-pip`: the fixed rules should report `external-main`, `external-shared`, `external-dev`, and `external-dev-shared`; the template-derived rule should report `external-template` from `requirements-template.txt`. The dev rule should not report dependencies reached through `-r requirements.txt`.

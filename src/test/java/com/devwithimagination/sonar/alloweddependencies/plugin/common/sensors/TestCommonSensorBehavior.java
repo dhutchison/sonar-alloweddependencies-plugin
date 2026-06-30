@@ -11,7 +11,7 @@ import java.util.Collections;
 import java.util.stream.Stream;
 
 import com.devwithimagination.sonar.alloweddependencies.plugin.maven.rules.MavenRulesDefinition;
-import com.devwithimagination.sonar.alloweddependencies.plugin.maven.sensors.CreateIssuesOnMavenDependenciesSensor;
+import com.devwithimagination.sonar.alloweddependencies.plugin.maven.sensors.CreateIssuesOnMavenArtifactsSensor;
 import com.devwithimagination.sonar.alloweddependencies.plugin.npm.rules.NpmRulesDefinition;
 import com.devwithimagination.sonar.alloweddependencies.plugin.npm.sensor.CreateIssuesOnNPMDependenciesSensor;
 import com.devwithimagination.sonar.alloweddependencies.plugin.python.rules.PythonRulesDefinition;
@@ -103,7 +103,7 @@ class TestCommonSensorBehavior {
                 NpmRulesDefinition.NPM_DEPENDENCY_LANGUAGE,
                 NpmRulesDefinition.REPOSITORY_NPM),
             Arguments.of(
-                new CreateIssuesOnMavenDependenciesSensor(null),
+                new CreateIssuesOnMavenArtifactsSensor(null),
                 MavenRulesDefinition.MAVEN_DEPENDENCY_LANGUAGE,
                 MavenRulesDefinition.REPOSITORY_MAVEN),
             Arguments.of(
@@ -122,7 +122,7 @@ class TestCommonSensorBehavior {
 
         return Stream.of(
             Arguments.of(new CreateIssuesOnNPMDependenciesSensor(null)),
-            Arguments.of(new CreateIssuesOnMavenDependenciesSensor(null)),
+            Arguments.of(new CreateIssuesOnMavenArtifactsSensor(null)),
             Arguments.of(new CreateIssuesOnPythonDependenciesSensor(null))
         );
 

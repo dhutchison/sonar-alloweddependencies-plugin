@@ -21,14 +21,14 @@ import org.sonar.api.batch.sensor.internal.SensorContextTester;
 import org.sonar.api.rule.RuleKey;
 
 /**
- * Test case for {@link CreateIssuesOnMavenDependenciesSensor}.
+ * Test case for {@link CreateIssuesOnMavenArtifactsSensor}.
  */
-class TestCreateIssuesOnMavenDependenciesSensor {
+class TestCreateIssuesOnMavenArtifactsSensor {
 
     /**
      * The sensor under test
      */
-    private CreateIssuesOnMavenDependenciesSensor sensor;
+    private CreateIssuesOnMavenArtifactsSensor sensor;
 
     /**
      * Setup common test dependencies
@@ -36,7 +36,7 @@ class TestCreateIssuesOnMavenDependenciesSensor {
     @BeforeEach
     void setup() {
         /* Create the sensor to test. We don't use the config so just pass null just now */
-        this.sensor = new CreateIssuesOnMavenDependenciesSensor(null);
+        this.sensor = new CreateIssuesOnMavenArtifactsSensor(null);
     }
 
     /**

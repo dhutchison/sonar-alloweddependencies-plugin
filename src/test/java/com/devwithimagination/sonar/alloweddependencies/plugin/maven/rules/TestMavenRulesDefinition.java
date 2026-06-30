@@ -44,7 +44,7 @@ public class TestMavenRulesDefinition {
 
         assertEquals(MavenRulesDefinition.REPOSITORY_MAVEN, repository.key());
         assertEquals(MavenRulesDefinition.MAVEN_DEPENDENCY_LANGUAGE, repository.language());
-        assertEquals(3, repository.rules().size(), "Expected three rules");
+        assertEquals(5, repository.rules().size(), "Expected five rules");
 
         /* Find the templated rule, and check the parameter count */
         final List<Rule> templateRules = repository.rules()
@@ -62,15 +62,22 @@ public class TestMavenRulesDefinition {
             .stream()
             .filter(r -> !r.template())
             .collect(Collectors.toList());
-        assertEquals(2, nonTemplateRules.size(), "Expected two non-templated rules");
+        assertEquals(4, nonTemplateRules.size(), "Expected four non-templated rules");
 
         assertTrue(nonTemplateRules.stream().anyMatch(r -> r.key().equals(MavenRulesDefinition.RULE_MAVEN_ALLOWED_MAIN.rule())),
                 "Expecting to find main scope rule");
         assertTrue(nonTemplateRules.stream().anyMatch(r -> r.key().equals(MavenRulesDefinition.RULE_MAVEN_ALLOWED_TEST.rule())),
                 "Expecting to find test scope rule");
+        assertTrue(nonTemplateRules.stream().anyMatch(r -> r.key().equals(MavenRulesDefinition.RULE_MAVEN_ALLOWED_PLUGINS.rule())),
+                "Expecting to find Maven plugins rule");
+        assertTrue(nonTemplateRules.stream().anyMatch(r -> r.key().equals(MavenRulesDefinition.RULE_MAVEN_ALLOWED_EXTENSIONS.rule())),
+                "Expecting to find Maven extensions rule");
         nonTemplateRules.forEach(r -> assertEquals(1, r.params().size(), "Expecting one parameter"));
 
-        repository.rules().forEach(rule -> {
+        repository.rules().stream()
+            .filter(rule -> !rule.key().equals(MavenRulesDefinition.RULE_MAVEN_ALLOWED_PLUGINS.rule()))
+            .filter(rule -> !rule.key().equals(MavenRulesDefinition.RULE_MAVEN_ALLOWED_EXTENSIONS.rule()))
+            .forEach(rule -> {
             final Param param = rule.param(MavenRulesDefinition.DEPS_PARAM_KEY);
             assertNotNull(param, "Expected dependency allow-list parameter");
             assertEquals("Allowed Maven Dependencies", param.name());
@@ -79,7 +86,15 @@ public class TestMavenRulesDefinition {
                 "Prefix a row with regex: to allow dependencies matching a regular expression. " +
                 "Blank lines and rows starting with # are ignored.",
                 param.description());
-        });
+            });
+
+        final Rule pluginsRule = repository.rule(MavenRulesDefinition.RULE_MAVEN_ALLOWED_PLUGINS.rule());
+        assertEquals("Allowed Maven Plugins", pluginsRule.name());
+        assertEquals("Allowed Maven Plugins", pluginsRule.param(MavenRulesDefinition.PLUGINS_PARAM_KEY).name());
+
+        final Rule extensionsRule = repository.rule(MavenRulesDefinition.RULE_MAVEN_ALLOWED_EXTENSIONS.rule());
+        assertEquals("Allowed Maven Extensions", extensionsRule.name());
+        assertEquals("Allowed Maven Extensions", extensionsRule.param(MavenRulesDefinition.EXTENSIONS_PARAM_KEY).name());
     }
 
 }
